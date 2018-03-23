@@ -12,9 +12,10 @@ except:
 
 
 __author__ = 'Jake Miller (@LaconicWolf)'
-__date__ = '20180322'
+__date__ = '20180323'
 __version__ = '0.01'
-__description__ = ''' Decodes the Authorization header value if Basic auth or Bearer. 
+__description__ = ''' Decodes the Authorization header value if Basic auth or Bearer
+                  auth with a JWT. 
                   '''
 
 
