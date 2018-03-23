@@ -22,7 +22,7 @@ __description__ = ''' Processes a specific cookie. Currently displays the cookie
                   '''
 
 # the cookie you want to process
-COOKIE_REGEX = "INSERT string or regex here"
+COOKIE_REGEX = "Insert string or regex here"
 # Example
 # COOKIE_REGEX = 'ASP.NET_SessionId(.*)'
 
