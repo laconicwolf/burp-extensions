@@ -1,21 +1,22 @@
+#!/usr/bin/env python
 
-__author__ = 'Jake Miller (@LaconicWolf)'
-__date__ = '20180322'
+
+__author__ = 'Jake Miller (@LaconicWolf), with some concepts taken from https://github.com/PortSwigger/nmap-parser/blob/master/NmapParser.py'
+__date__ = '20180811'
 __version__ = '0.01'
 __description__ = '''Creates a new Burp tab to upload a file containing
-                     URLs which are added to the SiteMap.
+                  URLs (separated by newlines) which are added to the SiteMap.
                   '''
 
 
 from burp import IBurpExtender               # Required for all extensions
-from burp import ITab
-from java.net import URL
-from java.awt import Dimension
-from javax import swing
+from burp import ITab                        # Used to create new tab in the UI
+from java.net import URL                     # Transforms URL into Java URL required by Burp extension
+from javax import Swing                      # Used to build UI in the tab
 from exceptions_fix import FixBurpExceptions # Used to make the error messages easier to debug
 import sys                                   # Used to write exceptions for exceptions_fix.py debugging
-import os
-from java.lang import Runnable
+import os                                    # Used to check the file path
+import threading                             # Used to launch new thread for making http requests
 
 
 # for debugging. https://github.com/securityMB/burp-exceptions
@@ -23,7 +24,6 @@ try:
     from exceptions_fix import FixBurpExceptions
 except:
     pass
-
 
 class BurpExtender(IBurpExtender, ITab):
     """Implements IBurpExtender"""
@@ -86,25 +86,44 @@ class BurpExtender(IBurpExtender, ITab):
                 self._fileText.setText("File Not Valid, Try Again")
 
     def addToSitemap(self, button):
-        """Need a docstring"""
-        try:
-            urls = open(self._fileLocation).read().splitlines()
-        except Exception as e:
-            print('An error occurred: ', e)
-            return
-        normalizedUrls = self.normalizeUrls(urls)
-        for url in normalizedUrls:
-            jUrl = URL(url)
-            request = self._helpers.buildHttpRequest(jUrl)
+        """Launches a separate thread and calls the _addToSitemap function"""
+
+        def _addToSitemap(filePath):
+            """Opens a file and reads in URLs, passing them to a function that
+            normalized them into proto://address:port format. The URLs are then
+            passed to the Burp API and requested within Burp, populating the sitemap
+            if the request is successful."""
             try:
-                requestResponse = self._callbacks.makeHttpRequest(
-                    self._helpers.buildHttpService(
-                        str(uUrl.getHost()), int(list[1]), str(uUrl.getProtocol()) == "https"), newRequest)
+                urls = open(self._fileLocation).read().splitlines()
+            except Exception as e:
+                print('An error occurred: ', e)
+                return
+            normalizedUrls = self.normalizeUrls(urls)
+            for url in normalizedUrls:
+                jUrl = URL(url)
+                newRequest = self._helpers.buildHttpRequest(jUrl)
+                port = int(url.split(':')[-1])
+                try:
+                    requestResponse = self._callbacks.makeHttpRequest(
+                        self._helpers.buildHttpService(str(jUrl.getHost()), port, str(jUrl.getProtocol()) == "https"), newRequest
+                        )
+                    if not requestResponse.getResponse() == None:
+                        self._callbacks.addToSiteMap(requestResponse)
+                except Exception as e:
+                    print(e)
+
+        # Start a thread to run the above nested function
+        # Without launching function in a new thread, the following exception occurs:
+        # java.lang.RuntimeException: java.lang.RuntimeException: 
+        # Extensions should not make HTTP requests in the Swing event dispatch thread
+        t = threading.Thread(target=_addToSitemap, args=[self._fileLocation])
+        t.daemon = True 
+        t.start()
 
     def normalizeUrls(self, urls):
         """Accepts a list of urls and formats them so they will be accepted.
-        Returns a new list of the processed urls."""
-        
+        Returns a new list of the processed urls.
+        """
         urlList = []
         httpPortList = ['80', '280', '81', '591', '593', '2080', '2480', '3080', 
                       '4080', '4567', '5080', '5104', '5800', '6080',
@@ -125,17 +144,28 @@ class BurpExtender(IBurpExtender, ITab):
                         urlList.append('https://' + url)
                     else:
                         url = url.strip()
-                        url = url.strip('/') + '/'
-                        urlList.append('http://' + url)
-                        urlList.append('https://' + url)
+                        url = url.strip('/')
+                        urlList.append('http://' + url + ':80')
+                        urlList.append('https://' + url + ':443')
                         continue
                 else:
                         url = url.strip()
-                        url = url.strip('/') + '/'
-                        urlList.append('http://' + url)
-                        urlList.append('https://' + url)
+                        url = url.strip('/')
+                        urlList.append('http://' + url + ':80')
+                        urlList.append('https://' + url + ':443')
                         continue
+            if len(url.split(':')) != 3:
+                if url[0:5] != 'https':    
+                    url = url.strip()
+                    url = url.strip('/')
+                    urlList.append(url + ':80')
+                    continue
+                elif url[0:5] == 'https':
+                    url = url.strip()
+                    url = url.strip('/')
+                    urlList.append(url + ':443')
+                    continue
             url = url.strip()
-            url = url.strip('/') + '/'
+            url = url.strip('/')
             urlList.append(url)
         return urlList
