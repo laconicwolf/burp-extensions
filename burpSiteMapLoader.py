@@ -5,7 +5,9 @@ __author__ = 'Jake Miller (@LaconicWolf), with some concepts taken from https://
 __date__ = '20180811'
 __version__ = '0.01'
 __description__ = '''Creates a new Burp tab to upload a file containing
-                  URLs (separated by newlines) which are added to the SiteMap.
+                  URLs (separated by newlines) which are then requested
+                  within Burp and added to the Sitemap if a response is 
+                  received.
                   '''
 
 
