@@ -217,6 +217,7 @@ class BurpExtender(IBurpExtender, ITab):
         """Passes the UI to burp"""
         return self.tab
 
+    # Implement the functions from the button clicks
     def encode(self, event):
         """Encodes the user input and writes the encoded 
         value to text fields.
