@@ -8,7 +8,7 @@ __description__ = """Burp Extension that encodes, decodes,
 
 from burp import IBurpExtender, ITab 
 from javax import swing
-from java.awt import BorderLayout, GridLayout
+from java.awt import BorderLayout
 import sys
 import base64
 import urllib
