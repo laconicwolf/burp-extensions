@@ -1,8 +1,8 @@
 __author__ = 'Jake Miller (@LaconicWolf)'
-__date__ = '20190220'
+__date__ = '20190214'
 __version__ = '0.01'
 __description__ = """Burp Extension that changes HTTP requests
-                  into useful formats.
+                  into Python and PowerShell formats.
                   """
 
 from burp import IBurpExtender, ITab, IContextMenuFactory
@@ -10,15 +10,8 @@ from javax import swing
 from java.awt import BorderLayout
 from java.util import ArrayList
 import sys
-import base64
 import urllib
-import binascii
-import cgi
-import json
-import re
-import hashlib
 import urlparse
-from HTMLParser import HTMLParser
 from BaseHTTPServer import BaseHTTPRequestHandler
 from StringIO import StringIO
 try:
@@ -37,7 +30,7 @@ class BurpExtender(IBurpExtender, ITab, IContextMenuFactory):
         self.callbacks = callbacks
 
         # Set our extension name
-        self.callbacks.setExtensionName("RequestAsPython/PowerShell")
+        self.callbacks.setExtensionName("Request-as-Python-or-PowerShell")
 
         # Create a context menu
         callbacks.registerContextMenuFactory(self)
@@ -45,40 +38,45 @@ class BurpExtender(IBurpExtender, ITab, IContextMenuFactory):
         # Create the tab
         self.tab = swing.JPanel(BorderLayout())
 
-        # Create the text area at the top of the tab
+        # Create a split panel where you can manually 
+        # adjust the panel size.
+        splitPane = swing.JSplitPane(swing.JSplitPane.VERTICAL_SPLIT)
+
+        # Create the top panel containing the text area
         textPanel = swing.JPanel()
-        self.textArea = swing.JTextArea('', 10, 100)
+
+        # An empty text area 12 columns deep and 
+        # full screen length.
+        self.textArea = swing.JTextArea('', 12, 100)
+
+        # Wrap the lines in the text area
         self.textArea.setLineWrap(True)
+
+        # When the lines get bigger than the area
+        # implement a scroll pane and put the text area
+        # in the pane.
         scroll = swing.JScrollPane(self.textArea)
 
-        # Add the text area to the text panel
-        textPanel.add(scroll)
+        # Set this scroll pane as the top of our split panel
+        splitPane.setTopComponent(scroll)
+        
 
-        # Add the text panel to the top of the main tab
-        self.tab.add(textPanel, BorderLayout.NORTH)
-
-        # Created a tabbed pane to go in the center of the
-        # main tab, below the text area
-        tabbedPane = swing.JTabbedPane()
-        #self.tab.add("Center", tabbedPane)
-        self.tab.add(tabbedPane, BorderLayout.CENTER)
-
-        # First tab
-        firstTab = swing.JPanel()
-        firstTab.layout = BorderLayout()
-        tabbedPane.addTab("RequestAs", firstTab)
-
-        # Button for first tab
-        buttonPanel = swing.JPanel()
-        buttonPanel.add(swing.JButton('Transform', actionPerformed=self.morphRequestsAs))
-        firstTab.add(buttonPanel, "North")
-
-        # Panel for the encoders. Each label and text field
-        # will go in horizontal boxes which will then go in 
-        # a vertical box
-        encPanel = swing.JPanel()
+        # Create the bottom panel for the transformed request. 
+        # Each label and text field will go in horizontal 
+        # boxes (rows) which will then go in a bigger box (box)        
+        
+        # The big box
         box = swing.Box.createVerticalBox()
         
+        # Row containing the button that calls transformRequestsAs
+        row = swing.Box.createHorizontalBox()
+        row.add(swing.JButton('Transform', 
+                          actionPerformed=self.transformRequestsAs))
+        
+        # Add the row to the big box
+        box.add(row)
+
+        # Row containing label and text area
         row = swing.Box.createHorizontalBox()
         self.pythonRequests = swing.JTextArea('', 2, 100)
         self.pythonRequests.setLineWrap(True)
@@ -87,6 +85,7 @@ class BurpExtender(IBurpExtender, ITab, IContextMenuFactory):
         row.add(scroll)
         box.add(row)
 
+        # Row containing label and text area
         row = swing.Box.createHorizontalBox()
         self.pythonUrlLib = swing.JTextArea('', 2, 100)
         self.pythonUrlLib.setLineWrap(True)
@@ -95,6 +94,7 @@ class BurpExtender(IBurpExtender, ITab, IContextMenuFactory):
         row.add(scroll)
         box.add(row)
 
+        # Row containing label and text area
         row = swing.Box.createHorizontalBox()
         self.powershellIwr = swing.JTextArea('', 2, 100)
         self.powershellIwr.setLineWrap(True)
@@ -103,8 +103,11 @@ class BurpExtender(IBurpExtender, ITab, IContextMenuFactory):
         row.add(scroll)
         box.add(row)
 
-        # Add the vertical box to the Encode tab
-        firstTab.add(box, "Center")
+        # Add this Panel to the bottom of the split panel
+        splitPane.setBottomComponent(box)
+        splitPane.setDividerLocation(150)
+
+        self.tab.add(splitPane)
 
         # Add the custom tab to Burp's UI
         callbacks.addSuiteTab(self)
@@ -121,6 +124,9 @@ class BurpExtender(IBurpExtender, ITab, IContextMenuFactory):
 
     # Implement IContextMenuFactory
     def createMenuItems(self, invocation):
+        '''Adds the extension to the context menu that 
+        appears when you right-click an object.
+        '''
         self.context = invocation
         itemContext = invocation.getSelectedMessages()
         
@@ -138,9 +144,12 @@ class BurpExtender(IBurpExtender, ITab, IContextMenuFactory):
 
 
     def handleHttpTraffic(self, event):
+        """Calls the function to write the HTTP object to 
+        the extensions text area, and then begins to parse
+        the HTTP traffic for use in other functions.
+        """
         self.writeRequestToTextBox()
         httpTraffic = self.context.getSelectedMessages()
-        #self.httpService = ''.join([item.getHttpService() for item in httpTraffic])
         for item in httpTraffic:
             self.httpService = item.getHttpService()
 
@@ -153,7 +162,11 @@ class BurpExtender(IBurpExtender, ITab, IContextMenuFactory):
         request = ''.join(httpRequest)
         self.textArea.text = request
 
-    def morphRequestsAs(self, event):
+    def transformRequestsAs(self, event):
+        """Calls functions that transform the HTTP object
+        text area into a python or powershell request if
+        applicable.
+        """
         self.pythonRequests.text = self.parseAsPythonRequests()
         self.pythonUrlLib.text = self.parseAsPythonUrlLib()
         self.powershellIwr.text = self.parseAsPowershellIwr()
@@ -211,6 +224,10 @@ resp = s.{}('{}'')""".format(headers, verb, url)
         return command
 
     def parseAsPythonUrlLib(self):
+        """Uses BaseHttpRequestHandler to parse an HTTP
+        request and print a command to make the same request
+        using the Python urllib2 library.
+        """
         request = HTTPRequest(self.textArea.text)
         verbs = ['GET', 'POST']
         if request.command not in verbs:
@@ -267,6 +284,10 @@ resp = urllib2.urlopen(req,)""".format(headers, url)
         return command
 
     def parseAsPowershellIwr(self):
+        """Uses BaseHttpRequestHandler to parse an HTTP
+        request and print a command to make the same request
+        using the Invoke-WebRequest powershell Cmdlet.
+        """
         request = HTTPRequest(self.textArea.text)
         url = self.httpService.toString()
         url += request.path
@@ -294,7 +315,6 @@ resp = urllib2.urlopen(req,)""".format(headers, url)
         if request.command in dataVerbs or int(request.headers.getheader('content-length')):
             length = int(request.headers.getheader('content-length'))
             body = request.rfile.read(length)
-            print body
             data = urlparse.parse_qsl(body)
 
         iwrData = '@{'
@@ -313,7 +333,7 @@ $Uri = '{}'
 $Headers = {}
 $Body = {}
 
-Invoke-WebRequests \
+Invoke-WebRequest \
 -Method $Method \
 -Uri $Uri \
 -Headers $Headers \
@@ -327,7 +347,7 @@ $Method = '{}'
 $Uri = '{}'
 $Headers = {}
 
-Invoke-WebRequests \
+Invoke-WebRequest \
 -Method $Method \
 -Uri $Uri \
 -Headers $Headers \
@@ -336,7 +356,9 @@ Invoke-WebRequests \
         return command
 
 class HTTPRequest(BaseHTTPRequestHandler):
+    '''Parses an HTTP request
     #https://stackoverflow.com/questions/4685217/parse-raw-http-headers
+    '''
     def __init__(self, request_text):
         self.rfile = StringIO(request_text)
         self.raw_requestline = self.rfile.readline()
