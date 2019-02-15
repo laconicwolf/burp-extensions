@@ -2,7 +2,9 @@
 A collection of scripts to extend Burp Suite. Most are just sample scripts that interact with Burp in a particular way, mainly to demonstrate how to interact with Burp. The code is commented well enough (hopefully!) to follow.
 
 Step-by-step tutorials to write Python extensions:
+
 https://laconicwolf.com/2019/02/07/burp-extension-python-tutorial-encode-decode-hash/
+
 https://laconicwolf.com/2018/04/13/burp-extension-python-tutorial/
 
 ## Extensions
