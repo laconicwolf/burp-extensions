@@ -20,6 +20,7 @@ from javax.swing import JMenuItem
 
 # stdlib
 import sys
+import threading
 
 # For easier debugging, if you want.
 # https://github.com/securityMB/burp-exceptions
@@ -70,14 +71,26 @@ class BurpExtender(IBurpExtender, IContextMenuFactory):
         a wordlist from the host selected in the context menu.
         """
         self.fromScope = False
-        self.createWordlist()
+        
+        # Need to perform method in new thread to
+        # prevent the GUI from locking up while the 
+        # work is being done.
+        t = threading.Thread(target=self.createWordlist)
+        t.daemon = True
+        t.start()
 
     def createWordlistFromScope(self, event):
         """Calls the createWordlist method and sets self.fromScope=True
         which creates a wordlist from the hosts in scope.
         """
         self.fromScope = True
-        self.createWordlist()
+
+        # Need to perform method in new thread to
+        # prevent the GUI from locking up while the 
+        # work is being done.
+        t = threading.Thread(target=self.createWordlist)
+        t.daemon = True
+        t.start()
 
     def createWordlist(self):
         """Gathers a list of urls from the specified host,
@@ -87,20 +100,24 @@ class BurpExtender(IBurpExtender, IContextMenuFactory):
 
         urllist = []
         self.filenamelist = []
+        hostUrls = []
     
         for traffic in httpTraffic:
-            hostUrl = str(traffic.getUrl())
+            try:
+                hostUrls.append(str(traffic.getUrl()))
+            except UnicodeEncodeError:
+                continue
 
         # The argument to sitemap should be able to take a URL prefix,
         # and only return info from that host, but I couldn't get it
-        # to work. 'None' returns the whole sitemap, and I filter later
+        # to work. 'None' returns the whole sitemap, and I filter later.
         siteMapData = self.callbacks.getSiteMap(None)
         for entry in siteMapData:
             requestInfo = self.helpers.analyzeRequest(entry)
             url = requestInfo.getUrl()
             try:
                 decodedUrl = self.helpers.urlDecode(str(url))
-            except:
+            except Exception as e:
                 continue
 
             # Append the URLs to the list if they are in scope
@@ -108,8 +125,9 @@ class BurpExtender(IBurpExtender, IContextMenuFactory):
             if self.fromScope and self.callbacks.isInScope(url):
                 urllist.append(decodedUrl)
             else:
-                if hostUrl in decodedUrl:
-                    urllist.append(decodedUrl)
+                for url in hostUrls:
+                    if decodedUrl.startswith(str(url)):
+                        urllist.append(decodedUrl)
         
         # Get the filename and remove the querystring if any
         for entry in urllist:
