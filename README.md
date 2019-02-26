@@ -9,7 +9,7 @@ https://laconicwolf.com/2018/04/13/burp-extension-python-tutorial/
 ## Extensions
 
 ### GenerateForcedBrowseWordlist.py
-Extracts the filenames from URLs in scope or from a selected host. Just right click on the hosts pane in the sitemap and click 'Generate forced browsing wordlist' for either selected items or all hosts in scope. A menu will appear that will prompt you to save it to a file.
+Extracts the filenames from URLs in scope or from a selected host. Just right click on the hosts pane in the sitemap and click 'Generate forced browsing wordlist' for either selected items or all hosts in scope. The output will appear in the extender tab, where you can set configure the extension to output to the system console, save to a file, or show in the UI.
 
 ### ExampleRepeater.py
 Like repeater, only without any of the features, bug checking, or elegance. A simple example that creates a tab with a split-panel GUI, where the top pane can be populated (By right-clicking and 'Send to ...' or just typing it) with an HTTP request. It implements a button, that when clicked, sends the HTTP request and writes the response to the bottom pane.
