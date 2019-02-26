@@ -136,8 +136,10 @@ class BurpExtender(IBurpExtender, IContextMenuFactory):
         # Writes wordlist to the Extender Tab
         for word in sorted(set(self.filenamelist)):
             if word:
-                print word
-        
+                try:
+                    print word
+                except UnicodeEncodeError:
+                    continue        
 try:
     FixBurpExceptions()
 except:
