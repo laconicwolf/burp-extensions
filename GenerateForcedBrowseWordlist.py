@@ -6,8 +6,7 @@ Burp Extension that extracts the filenames from URLs in
 scope or from a selected host. Just right click on the 
 hosts pane in the sitemap and click 'Generate forced
 browsing wordlist' for either selected items or all hosts
-in scope. Output appears in the extender tab, where it can
-be saved to a file.
+in scope. A prompt will appear that will let you save to a file.
 
 Several concepts and code snippets taken from:
 https://github.com/PortSwigger/wordlist-extractor/blob/master/burpList.py
