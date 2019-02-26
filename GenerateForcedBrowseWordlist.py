@@ -6,26 +6,17 @@ Burp Extension that extracts the filenames from URLs in
 scope or from a selected host. Just right click on the 
 hosts pane in the sitemap and click 'Generate forced
 browsing wordlist' for either selected items or all hosts
-in scope. A prompt will appear that will let you save to a file.
-
-Several concepts and code snippets taken from:
-https://github.com/PortSwigger/wordlist-extractor/blob/master/burpList.py
+in scope. The output will appear in the extender tab, where 
+you can set configure the extension to output to the system console,
+save to a file, or show in the UI.
 """
 
 # Burp imports
 from burp import IBurpExtender, IContextMenuFactory
 
 # Jython specific imports for the GUI
-from java.awt import BorderLayout
-from java.util import List, ArrayList
-from javax.swing.filechooser import FileNameExtensionFilter
-from javax.swing import JPanel
-from javax.swing import BorderFactory
-from javax.swing import JScrollPane
-from javax.swing import JFrame
-from javax.swing import JTextArea
+from java.util import ArrayList
 from javax.swing import JMenuItem
-from javax.swing import JFileChooser
 
 # stdlib
 import sys
@@ -37,7 +28,7 @@ try:
 except ImportError:
     pass
 
-class BurpExtender(IBurpExtender, IContextMenuFactory, JFrame):
+class BurpExtender(IBurpExtender, IContextMenuFactory):
     def registerExtenderCallbacks(self, callbacks):
         
         # Required for easier debugging: 
@@ -54,29 +45,6 @@ class BurpExtender(IBurpExtender, IContextMenuFactory, JFrame):
 
         # Create a context menu
         callbacks.registerContextMenuFactory(self)
-        
-        # Setup space for save dialogue to sit in.
-        self.panel = JPanel()
-        self.panel.setLayout(BorderLayout())
-
-        self.area = JTextArea()
-        self.area.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10))
-
-        pane = JScrollPane()
-        pane.getViewport().add(self.area)
-
-        self.panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10))
-        self.panel.add(pane)
-        self.add(self.panel)
-
-        self.setTitle("File chooser")
-        self.setSize(300, 250)
-        self.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
-        self.setLocationRelativeTo(None)
-
-        # This is just providing a place where the save box can sit in, 
-        # so no need for it to be visible on start
-        self.setVisible(False)
         
         return
 
@@ -147,32 +115,10 @@ class BurpExtender(IBurpExtender, IContextMenuFactory, JFrame):
         for entry in urllist:
             self.filenamelist.append(entry.split('/')[-1].split('?')[0])
 
-        # Write the items to a file
-        self.writeToFile()
-
-    def writeToFile(self):
-        """Writes the file wordlist to file."""
-        fileChooser = JFileChooser()
-
-        # Shows only text files in the save menu prompt
-        filter = FileNameExtensionFilter("Text Files",["txt"])
-        fileChooser.setFileFilter(filter)
-
-        ret = fileChooser.showSaveDialog(self.panel)
-        
-        # If they have selected the save option
-        if ret == JFileChooser.APPROVE_OPTION:
-            file = fileChooser.getSelectedFile()
-            
-            # Get the path that the user selected
-            filepath = str(file.getCanonicalPath())
-
-            with open(filepath, 'a+') as fh:
-                for word in sorted(set(self.filenamelist)):
-                    if word:
-                        fh.write(word +'\n')
-
-            print '[+] Wordlist created at {}'.format(filepath)
+        # Writes wordlist to the Extender Tab
+        for word in sorted(set(self.filenamelist)):
+            if word:
+                print word
         
 try:
     FixBurpExceptions()
