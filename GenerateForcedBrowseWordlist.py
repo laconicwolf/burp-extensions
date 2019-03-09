@@ -11,7 +11,7 @@ you can set configure the extension to output to the system console,
 save to a file, or show in the UI.
 
 Blog post explaining all the code in detail:
-
+https://laconicwolf.com/2019/03/09/burp-extension-python-tutorial-generate-a-forced-browsing-wordlist/
 """
 
 from burp import IBurpExtender, IContextMenuFactory
