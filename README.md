@@ -3,6 +3,7 @@ A collection of scripts to extend Burp Suite. Most are just sample scripts that 
 
 Step-by-step tutorials to write Python extensions:
 
+https://laconicwolf.com/2019/03/09/burp-extension-python-tutorial-generate-a-forced-browsing-wordlist/
 https://laconicwolf.com/2019/02/07/burp-extension-python-tutorial-encode-decode-hash/
 https://laconicwolf.com/2018/04/13/burp-extension-python-tutorial/
 
