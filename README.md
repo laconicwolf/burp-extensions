@@ -1,5 +1,5 @@
 # Burp Extensions
-A collection of scripts to extend Burp Suite. Most are just sample scripts that interact with Burp in a particular way, mainly to demonstrate how to interact with Burp. The code is commented well enough (hopefully!) to follow.
+A collection of scripts to extend Burp Suite. Most are just sample scripts that interact with Burp in a particular way, mainly to demonstrate how to interact with Burp. The code is commented well enough (hopefully!) to follow, or I have written a blog post that explains the code in detail.
 
 Step-by-step tutorials to write Python extensions:
 
