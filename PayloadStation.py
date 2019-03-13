@@ -2,8 +2,8 @@ __author__ = 'Jake Miller (@LaconicWolf)'
 __date__ = '20190312'
 __version__ = '0.01'
 __description__ = """\
-Burp Extension that generates Intruder payloads to 
-test HTTP headers.
+Burp Extension that generates payloads for 
+various testing needs.
 """
 
 from burp import IBurpExtender, ITab
