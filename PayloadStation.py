@@ -6,8 +6,9 @@ Burp Extension that generates Intruder payloads to
 test HTTP headers.
 """
 
-from burp import IBurpExtender, IIntruderPayloadGeneratorFactory, IIntruderPayloadGenerator, ITab
+from burp import IBurpExtender, ITab
 from javax import swing
+from javax.swing.filechooser import FileNameExtensionFilter
 from java.awt import BorderLayout, GridLayout, Toolkit
 from java.awt.datatransfer import StringSelection
 from java.awt.datatransfer import Clipboard
@@ -17,6 +18,8 @@ import string
 import random
 import threading
 import time
+import cgi
+import urllib
 import sys
 try:
     from exceptions_fix import FixBurpExceptions
@@ -42,10 +45,43 @@ headerTests = {
     "Random string reflection": True,
     "Error Invoking Characters": True,
     "Random long strings": True,
-    "Out-of-band": True
+    "Out-of-band": True,
 }
 
-class BurpExtender(IBurpExtender, ITab):
+xssTags = {
+    'script': True,
+    'button': True,
+    'video': False,
+    'details': True,
+    'math': False,
+    'audio': False,
+    'img': True,
+    'body': False,
+    'object': False
+}
+
+xssEventHandlers = {
+    'onclick': True,
+    'onerror': True,
+    'onkeypress': True,
+    'onmouseover': True,
+    'onsubmit': False,
+    'ondblclick': False,
+    'onmouseenter': False,
+    'onscroll': False,
+    'onwheel': False
+}
+
+xssConfig = {
+    "URL encode special chars": False,
+    "Replace () with ``": False,
+    "Toggle case": False,
+    "Capitalize": False,
+    "HTML encode special chars": False,
+    "Append random chars": False,
+}
+
+class BurpExtender(IBurpExtender, ITab, swing.JFrame):
     def registerExtenderCallbacks(self, callbacks):
         
         # Required for easier debugging: 
@@ -71,30 +107,59 @@ class BurpExtender(IBurpExtender, ITab):
         firstTab.layout = BorderLayout()
         tabbedPane.addTab("XSS", firstTab)
 
-        # Top of Headers Panel
+        tmpGridPanel = swing.JPanel()
+        tmpGridPanel.layout = GridLayout(1, 2)
+
+        # Top of XSS Panel
         tmpPanel = swing.JPanel()
         tmpPanel.layout = GridLayout(3, 5)
         tmpPanel.border = swing.BorderFactory.createTitledBorder("Tags to test")
         
         # First row
-        tmpPanel.add(swing.JCheckBox("script", True, actionPerformed=self.handleXssSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("details", True, actionPerformed=self.handleXssSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("img", True, actionPerformed=self.handleXssSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("script", True, actionPerformed=self.handleXssTagsSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("details", True, actionPerformed=self.handleXssTagsSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("img", True, actionPerformed=self.handleXssTagsSelectCheckBox))
         tmpPanel.add(swing.JLabel(""))
         
         # Second row
-        tmpPanel.add(swing.JCheckBox("button", True, actionPerformed=self.handleXssSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("math", True, actionPerformed=self.handleXssSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("body", True, actionPerformed=self.handleXssSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("button", True, actionPerformed=self.handleXssTagsSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("math", False, actionPerformed=self.handleXssTagsSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("body", False, actionPerformed=self.handleXssTagsSelectCheckBox))
         tmpPanel.add(swing.JLabel(""))
         
         # Third row
-        tmpPanel.add(swing.JCheckBox("video", True, actionPerformed=self.handleXssSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("audio", True, actionPerformed=self.handleXssSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("object", True, actionPerformed=self.handleXssSelectCheckBox))
-        tmpPanel.add(swing.JButton('Toggle All (TODO)', actionPerformed=self.handleXssButtonClick))
+        tmpPanel.add(swing.JCheckBox("video", False, actionPerformed=self.handleXssTagsSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("audio", False, actionPerformed=self.handleXssTagsSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("object", False, actionPerformed=self.handleXssTagsSelectCheckBox))
+        tmpPanel.add(swing.JLabel(""))
+
+        # Top of XSS Panel
+        tmpPanel1 = swing.JPanel()
+        tmpPanel1.layout = GridLayout(3, 5)
+        tmpPanel1.border = swing.BorderFactory.createTitledBorder("Event Handlers")
+     
+        # First row
+        tmpPanel1.add(swing.JCheckBox("onclick", True, actionPerformed=self.handleXssEventCheckBox))
+        tmpPanel1.add(swing.JCheckBox("onmouseover", True, actionPerformed=self.handleXssEventCheckBox))
+        tmpPanel1.add(swing.JCheckBox("onmouseenter", True, actionPerformed=self.handleXssEventCheckBox))
+        tmpPanel1.add(swing.JLabel(""))
         
-        firstTab.add(tmpPanel, BorderLayout.NORTH)
+        # Second row
+        tmpPanel1.add(swing.JCheckBox("onerror", True, actionPerformed=self.handleXssEventCheckBox))
+        tmpPanel1.add(swing.JCheckBox("onsubmit", False, actionPerformed=self.handleXssEventCheckBox))
+        tmpPanel1.add(swing.JCheckBox("onscroll", False, actionPerformed=self.handleXssEventCheckBox))
+        tmpPanel1.add(swing.JLabel(""))
+        
+        # Third row
+        tmpPanel1.add(swing.JCheckBox("onkeypress", False, actionPerformed=self.handleXssEventCheckBox))
+        tmpPanel1.add(swing.JCheckBox("ondblclick", False, actionPerformed=self.handleXssEventCheckBox))
+        tmpPanel1.add(swing.JCheckBox("onwheel", False, actionPerformed=self.handleXssEventCheckBox))
+        tmpPanel1.add(swing.JLabel(""))
+
+        #firstTab.add(tmpPanel, BorderLayout.NORTH)
+        tmpGridPanel.add(tmpPanel)
+        tmpGridPanel.add(tmpPanel1)
+        firstTab.add(tmpGridPanel, BorderLayout.NORTH)
 
         # Middle of XSS Panel
         tmpPanel = swing.JPanel()
@@ -113,8 +178,8 @@ class BurpExtender(IBurpExtender, ITab):
         tmpPanel.add(swing.JButton('Generate Payloads', actionPerformed=self.handleXssButtonClick))
         tmpPanel.add(swing.JButton('Copy Payloads to Clipboard', actionPerformed=self.handleXssButtonClick))
         tmpPanel.add(swing.JButton('Clear Payloads', actionPerformed=self.handleXssButtonClick))
-        tmpPanel.add(swing.JButton('Save to File (TODO)', actionPerformed=self.handleXssButtonClick))
-        tmpPanel.add(swing.JButton('Poll Collaborator Server', actionPerformed=self.handleXssButtonClick))
+        tmpPanel.add(swing.JButton('Save to File', actionPerformed=self.handleXssButtonClick))
+        tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleXssButtonClick))
         tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleXssButtonClick))
         firstTab.add(tmpPanel, BorderLayout.EAST)
 
@@ -122,27 +187,29 @@ class BurpExtender(IBurpExtender, ITab):
         tmpPanel = swing.JPanel()
         tmpPanel.layout = GridLayout(3, 5)
         tmpPanel.border = swing.BorderFactory.createTitledBorder("Config")
-        
+
         # First row
-        tmpPanel.add(swing.JCheckBox("onerror", True, actionPerformed=self.handleXssConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("ontoggle", True, actionPerformed=self.handleXssConfigCheckBox))
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JCheckBox("Capitalize", False, actionPerformed=self.handleXssConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Append random chars", False, actionPerformed=self.handleXssConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Replace () with ``", False, actionPerformed=self.handleXssConfigCheckBox))
+        tmpPanel.add(swing.JLabel("Add a prefix :     ", swing.SwingConstants.RIGHT))
+        self.xssPrefixArea = swing.JTextField('\'">', 15)
+        tmpPanel.add(self.xssPrefixArea)
         
         # Second row
-        tmpPanel.add(swing.JCheckBox("onmouseover", True, actionPerformed=self.handleXssConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("onmouseclick", True, actionPerformed=self.handleXssConfigCheckBox))
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JCheckBox("URL encode special chars", False, actionPerformed=self.handleXssConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Toggle case", False, actionPerformed=self.handleXssConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("HTML encode special chars", False, actionPerformed=self.handleXssConfigCheckBox))
+        tmpPanel.add(swing.JLabel("Add a suffix :     ", swing.SwingConstants.RIGHT))
+        self.xssSuffixArea = swing.JTextField("", 15)
+        tmpPanel.add(self.xssSuffixArea)
 
         # Third row
         tmpPanel.add(swing.JLabel(""))
         tmpPanel.add(swing.JLabel(""))
         tmpPanel.add(swing.JLabel(""))
         tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JButton('Toggle All (TODO)', actionPerformed=self.handleXssButtonClick))     
+        tmpPanel.add(swing.JLabel(""))   
         
         firstTab.add(tmpPanel, BorderLayout.SOUTH)
         ############ END XSS TAB ############
@@ -182,7 +249,7 @@ class BurpExtender(IBurpExtender, ITab):
         tmpPanel.add(swing.JCheckBox("X-Forwarded-Host", True, actionPerformed=self.handleHeadersSelectCheckBox))
         tmpPanel.add(swing.JCheckBox("X-Method-Override", True, actionPerformed=self.handleHeadersSelectCheckBox))
         tmpPanel.add(swing.JCheckBox("X-Wap-Profile", True, actionPerformed=self.handleHeadersSelectCheckBox))
-        tmpPanel.add(swing.JButton('Toggle All (TODO)', actionPerformed=self.handleHeadersButtonClick))
+        tmpPanel.add(swing.JLabel(""))
         
         thirdTab.add(tmpPanel, BorderLayout.NORTH)
 
@@ -203,7 +270,7 @@ class BurpExtender(IBurpExtender, ITab):
         tmpPanel.add(swing.JButton('Generate Payloads', actionPerformed=self.handleHeadersButtonClick))
         tmpPanel.add(swing.JButton('Copy Payloads to Clipboard', actionPerformed=self.handleHeadersButtonClick))
         tmpPanel.add(swing.JButton('Clear Payloads', actionPerformed=self.handleHeadersButtonClick))
-        tmpPanel.add(swing.JButton('Save to File (TODO)', actionPerformed=self.handleHeadersButtonClick))
+        tmpPanel.add(swing.JButton('Save to File', actionPerformed=self.handleHeadersButtonClick))
         tmpPanel.add(swing.JButton('Poll Collaborator Server', actionPerformed=self.handleHeadersButtonClick))
         tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleHeadersButtonClick))
         thirdTab.add(tmpPanel, BorderLayout.EAST)
@@ -232,7 +299,7 @@ class BurpExtender(IBurpExtender, ITab):
         tmpPanel.add(swing.JLabel(""))
         tmpPanel.add(swing.JLabel(""))
         tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JButton('Toggle All (TODO)', actionPerformed=self.handleHeadersButtonClick))     
+        tmpPanel.add(swing.JLabel(""))     
         
         thirdTab.add(tmpPanel, BorderLayout.SOUTH)
         ############ END HEADERS TAB ############
@@ -253,6 +320,29 @@ class BurpExtender(IBurpExtender, ITab):
         tabbedPane.addTab("OS Injection", sixthTab)
 
         callbacks.addSuiteTab(self)
+        
+        # Set up space for save dialogue
+        self.savePanel = swing.JPanel()
+        self.savePanel.setLayout(BorderLayout())
+        
+        self.saveArea = swing.JTextArea()
+        self.saveArea.setBorder(swing.BorderFactory.createEmptyBorder(10, 10, 10, 10))
+
+        pane = swing.JScrollPane()
+        pane.getViewport().add(self.saveArea)
+
+        self.savePanel.setBorder(swing.BorderFactory.createEmptyBorder(10, 10, 10, 10))
+        self.savePanel.add(pane)
+        self.add(self.savePanel)
+
+        self.setTitle("File chooser")
+        self.setSize(300, 250)
+        self.setDefaultCloseOperation(swing.JFrame.EXIT_ON_CLOSE)
+        self.setLocationRelativeTo(None)
+        
+        # Provides a place for the save box
+        # no need for it to be visible on start
+        self.setVisible(False)
         return
 
     def getTabCaption(self):
@@ -263,15 +353,25 @@ class BurpExtender(IBurpExtender, ITab):
         """Passes the UI to burp"""
         return self.tab
 
-    def handleXssSelectCheckBox(self, event):
+    def handleXssTagsSelectCheckBox(self, event):
         """Handles checkbox clicks from the XSS menu 
         header selection to ensure only payloads for 
         specified headers are generated.
         """
         if event.source.selected:
-            print event.source.selected, 'selected'
+            xssTags[event.source.text] = True
         else:
-            print event.source.selected, 'not selected'
+            xssTags[event.source.text] = False
+
+    def handleXssEventCheckBox(self, event):
+        """Handles checkbox clicks from the XSS evenk handler menu 
+        header selection to ensure only payloads for 
+        specified headers are generated.
+        """
+        if event.source.selected:
+            xssEventHandlers[event.source.text] = True
+        else:
+            xssEventHandlers[event.source.text] = False
 
     def handleXssConfigCheckBox(self, event):
         """Handles heckbox clicks from the XSS menu config 
@@ -279,17 +379,79 @@ class BurpExtender(IBurpExtender, ITab):
         or without any specified options.
         """
         if event.source.selected:
-            print event.source.selected, 'selected'
+            xssConfig[event.source.text] = True
         else:
-            print event.source.selected, 'not selected'
+            xssConfig[event.source.text] = False
 
     def handleXssButtonClick(self, event):
         """Handles button clicks from header menu."""
-        print 'button clicked'
+        buttonText = event.source.text
+        if buttonText == "Generate Payloads":
+            self.launchThread(self.generateXssPayloads())
+        elif buttonText == "Copy Payloads to Clipboard":
+            self.copyToClipboard(self.xssPayloadTextArea.text)
+        elif buttonText == 'Clear Payloads':
+            self.clearTextArea(self.xssPayloadTextArea)
+        elif buttonText == "Save to File":
+            self.launchThread(self.saveTextToFile, [self.xssPayloadTextArea])
+        else:
+            print buttonText
+
+    def generateXssSamplePayload(self):
+        samplePayloads = [
+            "prompt({})".format(random.randint(1,1000)), 
+            "confirm({})".format(random.randint(1,1000))
+        ]
+        return samplePayloads[random.randrange(0, 2)]
 
     def generateXssPayloads(self):
-        """Write payloads to the text area"""
-        self.xssPayloadTextArea.text = 'test'
+        """Write payloads to the XSS text area"""
+        tags = [tag for tag in xssTags if xssTags[tag]]
+        handlers = [handler for handler in xssEventHandlers if xssEventHandlers[handler]]
+        payloads = []
+        for tag in tags:
+            if xssConfig['Capitalize']:
+                tag = tag.upper()
+            if xssConfig['Toggle case']:
+                tag = capsEveryOtherChar(tag)
+            if tag.lower() == 'script':
+                xssSamplePayload = self.generateXssSamplePayload()
+                payloads.append("<{0}>{1}</{0}>".format(tag, xssSamplePayload))
+                continue
+            if tag.lower() == 'math':
+                payloads.append('<math href="javascript:alert(1)">CLICKME</math>')
+                payloads.append('<math><maction actiontype="statusline#http://google.com" xlink:href="javascript:alert(2)">CLICKME</maction></math>')
+                payloads.append('<math><maction actiontype="statusline" xlink:href="javascript:alert(3)">CLICKME<mtext>http://http://google.com</mtext></maction></math>')
+                continue
+            if tag.lower() == 'details':
+                xssSamplePayload = self.generateXssSamplePayload()
+                payloads.append('<details open ontoggle={}>'.format(xssSamplePayload))
+            for handler in handlers:
+                xssSamplePayload = self.generateXssSamplePayload()
+                if tag.lower() == 'details':
+                    payloads.append("<{} open {}={}>".format(tag, handler, xssSamplePayload))
+                elif tag.lower() in ['video', 'audio', 'img']:
+                    if tag.lower() in ['video', 'audio']:
+                        payloads.append("<{0} controls src=0 {1}={2}></{0}>".format(tag, handler, xssSamplePayload))
+                    else:
+                        payloads.append("<{} src=0 {}={}>".format(tag, handler, xssSamplePayload))
+                else:
+                    payloads.append("<{} {}={}>".format(tag, handler, xssSamplePayload))
+
+        if xssConfig['Replace () with ``']:
+            payloads = [payload.replace('(','`').replace(')','`') for payload in payloads]
+        if self.xssPrefixArea.text:
+            payloads = [self.xssPrefixArea.text + payload for payload in payloads]
+        if self.xssSuffixArea.text:
+            payloads = [payload + self.xssSuffixArea.text for payload in payloads]
+        if xssConfig['Append random chars']:
+            payloads = [getRandomString(5) + payload for payload in payloads]
+        if xssConfig['URL encode special chars']:
+            payloads = [urllib.quote(payload) for payload in payloads]
+        if xssConfig['HTML encode special chars']:
+            payloads = [cgi.escape(payload) for payload in payloads]
+
+        self.xssPayloadTextArea.text = '\n'.join(payloads)
 
     def handleHeadersSelectCheckBox(self, event):
         """Handles checkbox clicks from the Headers menu 
@@ -315,23 +477,19 @@ class BurpExtender(IBurpExtender, ITab):
         """Handles button clicks from header menu."""
         buttonText = event.source.text
         if buttonText == "Generate Payloads":
-            t = threading.Thread(target=self.generateHeaderPayloads())
-            t.daemon = True
-            t.start()
+            self.launchThread(self.generateHeaderPayloads())
         elif buttonText == "Copy Payloads to Clipboard":
-            toolkit = Toolkit.getDefaultToolkit()
-            clipboard = toolkit.getSystemClipboard()
-            clipboard.setContents(StringSelection(self.headerPayloadTextArea.text), None)
+            self.copyToClipboard(self.headerPayloadTextArea.text)
         elif buttonText == 'Clear Payloads':
-            self.headerPayloadTextArea.text = ''
+            self.clearTextArea(self.headerPayloadTextArea)
         elif buttonText == "Reset to default":
             pass
         elif buttonText == "Poll Collaborator Server":
-            t = threading.Thread(target=self.pollCollabServer())
-            t.daemon = True
-            t.start()
+            self.launchThread(self.pollCollabServer())            
+        elif buttonText == "Save to File":
+            self.launchThread(self.saveTextToFile, [self.headerPayloadTextArea])
         else:
-            pass
+            print buttonText
 
     def generateHeaderPayloads(self):
         """Write payloads to the text area"""
@@ -370,10 +528,60 @@ class BurpExtender(IBurpExtender, ITab):
                     props = i.properties
                     print "Received interaction '{}' from {} at {} via {}".format(props['interaction_id'], props['client_ip'], props['time_stamp'], props['type'])
 
+    def copyToClipboard(self, text):
+        """Copies text to clipboard"""
+        toolkit = Toolkit.getDefaultToolkit()
+        clipboard = toolkit.getSystemClipboard()
+        clipboard.setContents(StringSelection(text), None)
+
+    def clearTextArea(self, obj):
+        """Clears the text area of a specified object"""
+        obj.text = ''
+
+    def launchThread(self, targetFunction, arguments=None):
+        """Launches a thread against a specified target function"""
+        if arguments:
+            t = threading.Thread(target=targetFunction, args=arguments)
+        else:
+            t = threading.Thread(target=targetFunction)
+        t.daemon = True
+        t.start()
+
+    def saveTextToFile(self, obj):
+        """Save the text of an obj to a file.
+        Adapted from: https://github.com/PortSwigger/wordlist-extractor/blob/master/burpList.py
+        """
+        fileChooser = swing.JFileChooser()
+        filter = FileNameExtensionFilter("Text Files",["txt"])
+        fileChooser.setFileFilter(filter)
+        choice = fileChooser.showSaveDialog(self.savePanel)
+        if choice == swing.JFileChooser.APPROVE_OPTION:
+            file = fileChooser.getSelectedFile()
+            filepath = str(file.getCanonicalPath())
+            with open(filepath, 'w') as fh:
+                fh.write(obj.text)
+
+
 def getRandomString(length):
     """Returns a random string of lowercase letters."""
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(length))
+
+def capsEveryOtherChar(word):
+    """Returns a string with every other letter
+    capitalized.
+    https://stackoverflow.com/questions/17865563/capitalise-every-other-letter-in-a-string-in-python
+    """
+    ret = ""
+    i = True  # capitalize
+    for char in word:
+        if i:
+            ret += char.upper()
+        else:
+            ret += char.lower()
+        if char != ' ':
+            i = not i
+    return ret
 
 try:
     FixBurpExceptions()
