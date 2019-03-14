@@ -331,16 +331,16 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel.add(swing.JCheckBox("Append random chars", False, actionPerformed=self.handleXssConfigCheckBox))
         tmpPanel.add(swing.JCheckBox("Replace () with ``", False, actionPerformed=self.handleXssConfigCheckBox))
         tmpPanel.add(swing.JLabel("Add a prefix :     ", swing.SwingConstants.RIGHT))
-        self.xssPrefixArea = swing.JTextField('\'">', 15)
-        tmpPanel.add(self.xssPrefixArea)
+        self.sqliPrefixArea = swing.JTextField("", 15)
+        tmpPanel.add(self.sqliPrefixArea)
         
         # Second row
         tmpPanel.add(swing.JCheckBox("URL encode special chars", False, actionPerformed=self.handleXssConfigCheckBox))
         tmpPanel.add(swing.JCheckBox("Toggle case", False, actionPerformed=self.handleXssConfigCheckBox))
         tmpPanel.add(swing.JCheckBox("HTML encode special chars", False, actionPerformed=self.handleXssConfigCheckBox))
         tmpPanel.add(swing.JLabel("Add a suffix :     ", swing.SwingConstants.RIGHT))
-        self.xssSuffixArea = swing.JTextField("", 15)
-        tmpPanel.add(self.xssSuffixArea)
+        self.sqliSuffixArea = swing.JTextField("", 15)
+        tmpPanel.add(self.sqliSuffixArea)
 
         # Third row
         tmpPanel.add(swing.JLabel(""))
