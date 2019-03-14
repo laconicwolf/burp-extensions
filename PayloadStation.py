@@ -652,10 +652,10 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         for payload in payloadData:
             for db in dbms:
                 for test in tests:
-                    if db.lower() in payload[0].lower() and test.lower() in payload[0].lower():
+                    if (db.lower() in payload[0].lower() and test.lower() in payload[0].lower()):
                         sqliPayloads.append(payload[1])
 
-        self.sqliPayloadTextArea.text = '\n'.join(sqliPayloads)
+        self.sqliPayloadTextArea.text = '\n'.join(list(set(sqliPayloads)))
 
     def handleHeadersSelectCheckBox(self, event):
         """Handles checkbox clicks from the Headers menu 
