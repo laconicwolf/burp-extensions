@@ -317,7 +317,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel.add(swing.JButton('Copy Payloads to Clipboard', actionPerformed=self.handleSqliButtonClick))
         tmpPanel.add(swing.JButton('Clear Payloads', actionPerformed=self.handleSqliButtonClick))
         tmpPanel.add(swing.JButton('Save to File', actionPerformed=self.handleSqliButtonClick))
-        tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleSqliButtonClick))
+        tmpPanel.add(swing.JButton('Poll Collaborator Server', actionPerformed=self.handleSqliButtonClick))
         tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleSqliButtonClick))
         secondTab.add(tmpPanel, BorderLayout.EAST)
 
@@ -609,7 +609,23 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
             xssConfig[event.source.text] = False
 
     def handleSqliButtonClick(self, event):
-        print 333
+        """Handles button clicks from SQLi menu."""
+        buttonText = event.source.text
+        if buttonText == "Generate Payloads":
+            self.launchThread(self.generateSqliPayloads())
+        elif buttonText == "Copy Payloads to Clipboard":
+            self.copyToClipboard(self.sqliPayloadTextArea.text)
+        elif buttonText == 'Clear Payloads':
+            self.clearTextArea(self.sqliPayloadTextArea)
+        elif buttonText == "Poll Collaborator Server":
+            self.launchThread(self.pollCollabServer())            
+        elif buttonText == "Save to File":
+            self.launchThread(self.saveTextToFile, [self.sqliPayloadTextArea])
+        else:
+            print buttonText
+
+    def generateSqliPayloads(self):
+        print 'BOOOM!!'
 
     def handleHeadersSelectCheckBox(self, event):
         """Handles checkbox clicks from the Headers menu 
@@ -640,8 +656,6 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
             self.copyToClipboard(self.headerPayloadTextArea.text)
         elif buttonText == 'Clear Payloads':
             self.clearTextArea(self.headerPayloadTextArea)
-        elif buttonText == "Reset to default":
-            pass
         elif buttonText == "Poll Collaborator Server":
             self.launchThread(self.pollCollabServer())            
         elif buttonText == "Save to File":
