@@ -612,19 +612,19 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
 
     def handleSqliTechniquesCheckBox(self, event):
         if event.source.selected:
-            sqliConfig[event.source.text] = True
+            sqliTechniques[event.source.text] = True
         else:
-            sqliConfig[event.source.text] = False
+            sqliTechniques[event.source.text] = False
 
     def handleSqliConfigCheckBox(self, event):
-        """Handles heckbox clicks from the XSS menu config 
+        """Handles checkbox clicks from the SQLi menu config 
         selection to ensure only payloads are generated with 
         or without any specified options.
         """
         if event.source.selected:
-            xssConfig[event.source.text] = True
+            sqliConfig[event.source.text] = True
         else:
-            xssConfig[event.source.text] = False
+            sqliConfig[event.source.text] = False
 
     def handleSqliButtonClick(self, event):
         """Handles button clicks from SQLi menu."""
@@ -640,7 +640,9 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         elif buttonText == "Save to File":
             self.launchThread(self.saveTextToFile, [self.sqliPayloadTextArea])
         else:
-            print buttonText
+            print sqliDbmsToTest
+            print
+            print sqliTechniques
 
     def generateSqliPayloads(self):
         """Write payloads to the text area"""
