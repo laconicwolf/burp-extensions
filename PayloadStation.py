@@ -106,10 +106,6 @@ headerTests = {
     "Out-of-band": True,
 }
 
-
-
-
-
 class BurpExtender(IBurpExtender, ITab, swing.JFrame):
     def registerExtenderCallbacks(self, callbacks):
         
@@ -307,9 +303,9 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel = swing.JPanel()
         tmpPanel.layout = BorderLayout()
         tmpPanel.border = swing.BorderFactory.createTitledBorder("Payloads")
-        self.xssPayloadTextArea = swing.JTextArea('', 15, 100)
-        self.xssPayloadTextArea.setLineWrap(False)
-        scrollTextArea = swing.JScrollPane(self.xssPayloadTextArea)
+        self.sqliPayloadTextArea = swing.JTextArea('', 15, 100)
+        self.sqliPayloadTextArea.setLineWrap(False)
+        scrollTextArea = swing.JScrollPane(self.sqliPayloadTextArea)
         tmpPanel.add(scrollTextArea)
         secondTab.add(tmpPanel, BorderLayout.CENTER)
 
