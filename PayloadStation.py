@@ -26,28 +26,6 @@ try:
 except ImportError:
     pass
 
-headersToTest = {
-    'Authorization': True,
-    'Connection': True, 
-    'Host': True,
-    'HTTP2-Settings': True,
-    'Origin': True,
-    'Proxy-Authorization': True,
-    'Referer': True, 
-    'User-Agent': True,
-    'X-Forwarded-For': True,
-    'X-Forwarded-Host': True, 
-    'X-Method-Override': True,
-    'X-Wap-Profile': True    
-}
-
-headerTests = {
-    "Random string reflection": True,
-    "Error Invoking Characters": True,
-    "Random long strings": True,
-    "Out-of-band": True,
-}
-
 xssTags = {
     'script': True,
     'button': True,
@@ -80,6 +58,57 @@ xssConfig = {
     "HTML encode special chars": False,
     "Append random chars": False,
 }
+
+sqliDmbsToTest = {
+    "Oracle": True,
+    "MySQL": True,
+    "MS SQL": True,
+    "PostgreSQL": True,
+    "SQLite": True
+}
+
+sqliTechniques = {
+    "Boolean-based blind": True,
+    "Error-based": True,
+    "Time-based blind": True,
+    "UNION query-based": True,
+    "Stacked queries": True
+}
+
+sqliConfig = {
+    "URL encode special chars": False,
+    "Replace () with ``": False,
+    "Toggle case": False,
+    "Capitalize": False,
+    "HTML encode special chars": False,
+    "Append random chars": False,
+}
+
+headersToTest = {
+    'Authorization': True,
+    'Connection': True, 
+    'Host': True,
+    'HTTP2-Settings': True,
+    'Origin': True,
+    'Proxy-Authorization': True,
+    'Referer': True, 
+    'User-Agent': True,
+    'X-Forwarded-For': True,
+    'X-Forwarded-Host': True, 
+    'X-Method-Override': True,
+    'X-Wap-Profile': True    
+}
+
+headerTests = {
+    "Random string reflection": True,
+    "Error Invoking Characters": True,
+    "Random long strings": True,
+    "Out-of-band": True,
+}
+
+
+
+
 
 class BurpExtender(IBurpExtender, ITab, swing.JFrame):
     def registerExtenderCallbacks(self, callbacks):
@@ -214,10 +243,118 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         firstTab.add(tmpPanel, BorderLayout.SOUTH)
         ############ END XSS TAB ############
 
-        # Second tab
+        # Second tab 
+        ############ START SQLi TAB ############
         secondTab = swing.JPanel()
         secondTab.layout = BorderLayout()
         tabbedPane.addTab("SQLi", secondTab)
+
+        tmpGridPanel = swing.JPanel()
+        tmpGridPanel.layout = GridLayout(1, 2)
+
+        # Top of SQLi Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = GridLayout(3, 5)
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("DBMS to test")
+        
+        # First row
+        tmpPanel.add(swing.JCheckBox("Oracle", True, actionPerformed=self.handleSqliDbSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("MySQL", True, actionPerformed=self.handleSqliDbSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("MS SQL", True, actionPerformed=self.handleSqliDbSelectCheckBox))
+        tmpPanel.add(swing.JLabel(""))
+        
+        # Second row
+        tmpPanel.add(swing.JCheckBox("PostgreSQL", True, actionPerformed=self.handleSqliDbSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("SQLite", True, actionPerformed=self.handleSqliDbSelectCheckBox))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+        
+        # Third row
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+
+        # Top of SQLi Panel
+        tmpPanel1 = swing.JPanel()
+        tmpPanel1.layout = GridLayout(3, 5)
+        tmpPanel1.border = swing.BorderFactory.createTitledBorder("Techniques")
+     
+        # First row
+        tmpPanel1.add(swing.JCheckBox("Boolean-based blind", True, actionPerformed=self.handleSqliTechniquesCheckBox))
+        tmpPanel1.add(swing.JCheckBox("Time-based blind", True, actionPerformed=self.handleSqliTechniquesCheckBox))
+        tmpPanel1.add(swing.JCheckBox("Error-based", True, actionPerformed=self.handleSqliTechniquesCheckBox))
+        tmpPanel1.add(swing.JLabel(""))
+        
+        # Second row
+        tmpPanel1.add(swing.JCheckBox("UNION query-based", True, actionPerformed=self.handleSqliTechniquesCheckBox))
+        tmpPanel1.add(swing.JCheckBox("Stacked queries", True, actionPerformed=self.handleSqliTechniquesCheckBox))
+        tmpPanel1.add(swing.JLabel(""))
+        tmpPanel1.add(swing.JLabel(""))
+        
+        # Third row
+        tmpPanel1.add(swing.JLabel(""))
+        tmpPanel1.add(swing.JLabel(""))
+        tmpPanel1.add(swing.JLabel(""))
+        tmpPanel1.add(swing.JLabel(""))
+
+        #firstTab.add(tmpPanel, BorderLayout.NORTH)
+        tmpGridPanel.add(tmpPanel)
+        tmpGridPanel.add(tmpPanel1)
+        secondTab.add(tmpGridPanel, BorderLayout.NORTH)
+
+        # Middle of SQLi Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = BorderLayout()
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("Payloads")
+        self.xssPayloadTextArea = swing.JTextArea('', 15, 100)
+        self.xssPayloadTextArea.setLineWrap(False)
+        scrollTextArea = swing.JScrollPane(self.xssPayloadTextArea)
+        tmpPanel.add(scrollTextArea)
+        secondTab.add(tmpPanel, BorderLayout.CENTER)
+
+        # Right/Middle of SQLi Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = GridLayout(6,1)
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("Output options")
+        tmpPanel.add(swing.JButton('Generate Payloads', actionPerformed=self.handleSqliButtonClick))
+        tmpPanel.add(swing.JButton('Copy Payloads to Clipboard', actionPerformed=self.handleSqliButtonClick))
+        tmpPanel.add(swing.JButton('Clear Payloads', actionPerformed=self.handleSqliButtonClick))
+        tmpPanel.add(swing.JButton('Save to File', actionPerformed=self.handleSqliButtonClick))
+        tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleSqliButtonClick))
+        tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleSqliButtonClick))
+        secondTab.add(tmpPanel, BorderLayout.EAST)
+
+        # Bottom of SQLi Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = GridLayout(3, 5)
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("Config")
+
+        # First row
+        tmpPanel.add(swing.JCheckBox("Capitalize", False, actionPerformed=self.handleXssConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Append random chars", False, actionPerformed=self.handleXssConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Replace () with ``", False, actionPerformed=self.handleXssConfigCheckBox))
+        tmpPanel.add(swing.JLabel("Add a prefix :     ", swing.SwingConstants.RIGHT))
+        self.xssPrefixArea = swing.JTextField('\'">', 15)
+        tmpPanel.add(self.xssPrefixArea)
+        
+        # Second row
+        tmpPanel.add(swing.JCheckBox("URL encode special chars", False, actionPerformed=self.handleXssConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Toggle case", False, actionPerformed=self.handleXssConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("HTML encode special chars", False, actionPerformed=self.handleXssConfigCheckBox))
+        tmpPanel.add(swing.JLabel("Add a suffix :     ", swing.SwingConstants.RIGHT))
+        self.xssSuffixArea = swing.JTextField("", 15)
+        tmpPanel.add(self.xssSuffixArea)
+
+        # Third row
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))   
+        
+        secondTab.add(tmpPanel, BorderLayout.SOUTH)
+        ############ END SQLi TAB ############
 
         ############ START HEADERS TAB ############
         # Third tab 
@@ -452,6 +589,31 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
             payloads = [cgi.escape(payload) for payload in payloads]
 
         self.xssPayloadTextArea.text = '\n'.join(payloads)
+    
+    def handleSqliDbSelectCheckBox(self, event):
+        if event.source.selected:
+            sqliDmbsToTest[event.source.text] = True
+        else:
+            sqliDbmsToTest[event.source.text] = False
+
+    def handleSqliTechniquesCheckBox(self, event):
+        if event.source.selected:
+            sqliConfig[event.source.text] = True
+        else:
+            sqliConfig[event.source.text] = False
+
+    def handleSqliConfigCheckBox(self, event):
+        """Handles heckbox clicks from the XSS menu config 
+        selection to ensure only payloads are generated with 
+        or without any specified options.
+        """
+        if event.source.selected:
+            xssConfig[event.source.text] = True
+        else:
+            xssConfig[event.source.text] = False
+
+    def handleSqliButtonClick(self, event):
+        print 333
 
     def handleHeadersSelectCheckBox(self, event):
         """Handles checkbox clicks from the Headers menu 
