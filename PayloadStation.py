@@ -20,7 +20,10 @@ import threading
 import time
 import cgi
 import urllib
+import re
 import sys
+import os
+import xml.etree.ElementTree as etree
 try:
     from exceptions_fix import FixBurpExceptions
 except ImportError:
@@ -57,14 +60,23 @@ xssConfig = {
     "Capitalize": False,
     "HTML encode special chars": False,
     "Append random chars": False,
+    "Non-standard percent encoding": False,
+    "Non-standard slash encoding": False
 }
 
-sqliDmbsToTest = {
-    "Oracle": True,
+sqliDbmsToTest = {
     "MySQL": True,
-    "MS SQL": True,
+    "Oracle": True,
     "PostgreSQL": True,
-    "SQLite": True
+    "Microsoft SQL Server": True,
+    "Microsoft Access": False,
+    "IBM DB2": False,
+    "SQLite": False,
+    "Firebird": False,
+    "Sybase": False,
+    "SAP MaxDB": False,
+    "HSQLDB": False,
+    "Informix": False,
 }
 
 sqliTechniques = {
@@ -82,6 +94,8 @@ sqliConfig = {
     "Capitalize": False,
     "HTML encode special chars": False,
     "Append random chars": False,
+    "Non-standard percent encoding": False,
+    "Non-standard slash encoding": False
 }
 
 headersToTest = {
@@ -218,7 +232,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel.add(swing.JCheckBox("Append random chars", False, actionPerformed=self.handleXssConfigCheckBox))
         tmpPanel.add(swing.JCheckBox("Replace () with ``", False, actionPerformed=self.handleXssConfigCheckBox))
         tmpPanel.add(swing.JLabel("Add a prefix :     ", swing.SwingConstants.RIGHT))
-        self.xssPrefixArea = swing.JTextField('\'">', 15)
+        self.xssPrefixArea = swing.JTextField('', 15)
         tmpPanel.add(self.xssPrefixArea)
         
         # Second row
@@ -230,8 +244,8 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel.add(self.xssSuffixArea)
 
         # Third row
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JCheckBox("Non-standard percent encoding", False, actionPerformed=self.handleXssConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Non-standard slash encoding", False, actionPerformed=self.handleXssConfigCheckBox))
         tmpPanel.add(swing.JLabel(""))
         tmpPanel.add(swing.JLabel(""))
         tmpPanel.add(swing.JLabel(""))   
@@ -254,22 +268,22 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel.border = swing.BorderFactory.createTitledBorder("DBMS to test")
         
         # First row
-        tmpPanel.add(swing.JCheckBox("Oracle", True, actionPerformed=self.handleSqliDbSelectCheckBox))
         tmpPanel.add(swing.JCheckBox("MySQL", True, actionPerformed=self.handleSqliDbSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("MS SQL", True, actionPerformed=self.handleSqliDbSelectCheckBox))
-        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JCheckBox("Oracle", True, actionPerformed=self.handleSqliDbSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("PostgreSQL", True, actionPerformed=self.handleSqliDbSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("Microsoft SQL Server", True, actionPerformed=self.handleSqliDbSelectCheckBox))
         
         # Second row
-        tmpPanel.add(swing.JCheckBox("PostgreSQL", True, actionPerformed=self.handleSqliDbSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("SQLite", True, actionPerformed=self.handleSqliDbSelectCheckBox))
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JCheckBox("Microsoft Access", False, actionPerformed=self.handleSqliDbSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("IBM DB2", False, actionPerformed=self.handleSqliDbSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("SQLite", False, actionPerformed=self.handleSqliDbSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("Firebird", False, actionPerformed=self.handleSqliDbSelectCheckBox))
         
         # Third row
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JCheckBox("Sybase", False, actionPerformed=self.handleSqliDbSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("SAP MaxDB", False, actionPerformed=self.handleSqliDbSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("HSQLDB", False, actionPerformed=self.handleSqliDbSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("Informix", False, actionPerformed=self.handleSqliDbSelectCheckBox))
 
         # Top of SQLi Panel
         tmpPanel1 = swing.JPanel()
@@ -327,24 +341,24 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel.border = swing.BorderFactory.createTitledBorder("Config")
 
         # First row
-        tmpPanel.add(swing.JCheckBox("Capitalize", False, actionPerformed=self.handleXssConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("Append random chars", False, actionPerformed=self.handleXssConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("Replace () with ``", False, actionPerformed=self.handleXssConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Capitalize", False, actionPerformed=self.handleSqliConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Append random chars", False, actionPerformed=self.handleSqliConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Replace () with ``", False, actionPerformed=self.handleSqliConfigCheckBox))
         tmpPanel.add(swing.JLabel("Add a prefix :     ", swing.SwingConstants.RIGHT))
         self.sqliPrefixArea = swing.JTextField("", 15)
         tmpPanel.add(self.sqliPrefixArea)
         
         # Second row
-        tmpPanel.add(swing.JCheckBox("URL encode special chars", False, actionPerformed=self.handleXssConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("Toggle case", False, actionPerformed=self.handleXssConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("HTML encode special chars", False, actionPerformed=self.handleXssConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("URL encode special chars", False, actionPerformed=self.handleSqliConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Toggle case", False, actionPerformed=self.handleSqliConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("HTML encode special chars", False, actionPerformed=self.handleSqliConfigCheckBox))
         tmpPanel.add(swing.JLabel("Add a suffix :     ", swing.SwingConstants.RIGHT))
         self.sqliSuffixArea = swing.JTextField("", 15)
         tmpPanel.add(self.sqliSuffixArea)
 
         # Third row
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JCheckBox("Non-standard percent encoding", False, actionPerformed=self.handleSqliConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Non-standard slash encoding", False, actionPerformed=self.handleSqliConfigCheckBox))
         tmpPanel.add(swing.JLabel(""))
         tmpPanel.add(swing.JLabel(""))
         tmpPanel.add(swing.JLabel(""))   
@@ -579,8 +593,12 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
             payloads = [payload + self.xssSuffixArea.text for payload in payloads]
         if xssConfig['Append random chars']:
             payloads = [getRandomString(5) + payload for payload in payloads]
+        if xssConfig['Non-standard percent encoding']:
+            payloads = [percentNonStandardEncode(payload) for payload in payloads]
+        if xssConfig['Non-standard slash encoding']:
+            payloads = [slashNonStandardEncode(payload) for payload in payloads]
         if xssConfig['URL encode special chars']:
-            payloads = [urllib.quote(payload) for payload in payloads]
+            payloads = [urlEncode(payload) for payload in payloads]
         if xssConfig['HTML encode special chars']:
             payloads = [cgi.escape(payload) for payload in payloads]
 
@@ -588,7 +606,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
     
     def handleSqliDbSelectCheckBox(self, event):
         if event.source.selected:
-            sqliDmbsToTest[event.source.text] = True
+            sqliDbmsToTest[event.source.text] = True
         else:
             sqliDbmsToTest[event.source.text] = False
 
@@ -625,7 +643,19 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
             print buttonText
 
     def generateSqliPayloads(self):
-        print 'BOOOM!!'
+        """Write payloads to the text area"""
+        payloadData = getSqlMapPayloads()
+        dbms = [db for db in sqliDbmsToTest if sqliDbmsToTest[db]]
+        tests = [test for test in sqliTechniques if sqliTechniques[test]]
+        sqliPayloads = []
+
+        for payload in payloadData:
+            for db in dbms:
+                for test in tests:
+                    if db.lower() in payload[0].lower() and test.lower() in payload[0].lower():
+                        sqliPayloads.append(payload[1])
+
+        self.sqliPayloadTextArea.text = '\n'.join(sqliPayloads)
 
     def handleHeadersSelectCheckBox(self, event):
         """Handles checkbox clicks from the Headers menu 
@@ -734,6 +764,27 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
                 fh.write(obj.text)
 
 
+def urlEncode(string):
+    """Returns a string where any reserved URL characters
+    are percent encoded. 
+    For example, <script> --> %3Cscript%3E"""
+    return urllib.quote(string)
+
+def percentNonStandardEncode(string):
+    """Returns a string where any reserved URL characters
+    are percent encoded using non standard encoding. 
+    For example, <script> --> %u003Cscript%u003E"""
+    urlEncString = urllib.quote(string)
+    return re.sub(r'(%)([0-9a-fA-F]{2})', r'\g<1>u00\g<2>', urlEncString, flags=re.IGNORECASE)
+
+def slashNonStandardEncode(string):
+    """Returns a string where any reserved URL characters
+    are percent encoded using non standard encoding. 
+    For example, <script> --> %u003Cscript%u003E"""
+    urlEncString = urllib.quote(string)
+    nonStandardPercent = re.sub(r'(%)([0-9a-fA-F]{2})', r'\g<1>u00\g<2>', urlEncString, flags=re.IGNORECASE)
+    return nonStandardPercent.replace('%', '\\')
+
 def getRandomString(length):
     """Returns a random string of lowercase letters."""
     letters = string.ascii_lowercase
@@ -754,6 +805,19 @@ def capsEveryOtherChar(word):
         if char != ' ':
             i = not i
     return ret
+
+def getSqlMapPayloads():
+    """Reads in a ::: delimited file containing sqlmap payloads 
+    and descriptions. Returns the data as a list of tuples.
+    """
+    filename = 'PayloadStationData' + os.sep + 'sqlmap_payloads-03142019.txt'
+    with open(filename) as fh:
+        contents = fh.read().splitlines()
+    payload_data = []
+    for line in contents:
+        payload_data.append((line.split(':::')[0], line.split(':::')[1]))
+
+    return sorted(payload_data, key=lambda x: x[0])
 
 try:
     FixBurpExceptions()
