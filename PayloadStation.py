@@ -83,17 +83,13 @@ sqliTechniques = {
     "Boolean-based blind": True,
     "Error-based": True,
     "Time-based blind": True,
-    "UNION query-based": True,
     "Stacked queries": True
 }
 
 sqliConfig = {
     "URL encode special chars": False,
-    "Replace () with ``": False,
     "Toggle case": False,
-    "Capitalize": False,
-    "HTML encode special chars": False,
-    "Append random chars": False,
+    "Lower case": False,
     "Non-standard percent encoding": False,
     "Non-standard slash encoding": False
 }
@@ -293,11 +289,11 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         # First row
         tmpPanel1.add(swing.JCheckBox("Boolean-based blind", True, actionPerformed=self.handleSqliTechniquesCheckBox))
         tmpPanel1.add(swing.JCheckBox("Time-based blind", True, actionPerformed=self.handleSqliTechniquesCheckBox))
-        tmpPanel1.add(swing.JCheckBox("Error-based", True, actionPerformed=self.handleSqliTechniquesCheckBox))
+        tmpPanel1.add(swing.JLabel(""))
         tmpPanel1.add(swing.JLabel(""))
         
         # Second row
-        tmpPanel1.add(swing.JCheckBox("UNION query-based", True, actionPerformed=self.handleSqliTechniquesCheckBox))
+        tmpPanel1.add(swing.JCheckBox("Error-based", True, actionPerformed=self.handleSqliTechniquesCheckBox))
         tmpPanel1.add(swing.JCheckBox("Stacked queries", True, actionPerformed=self.handleSqliTechniquesCheckBox))
         tmpPanel1.add(swing.JLabel(""))
         tmpPanel1.add(swing.JLabel(""))
@@ -331,7 +327,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel.add(swing.JButton('Copy Payloads to Clipboard', actionPerformed=self.handleSqliButtonClick))
         tmpPanel.add(swing.JButton('Clear Payloads', actionPerformed=self.handleSqliButtonClick))
         tmpPanel.add(swing.JButton('Save to File', actionPerformed=self.handleSqliButtonClick))
-        tmpPanel.add(swing.JButton('Poll Collaborator Server', actionPerformed=self.handleSqliButtonClick))
+        tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleSqliButtonClick))
         tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleSqliButtonClick))
         secondTab.add(tmpPanel, BorderLayout.EAST)
 
@@ -341,17 +337,17 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel.border = swing.BorderFactory.createTitledBorder("Config")
 
         # First row
-        tmpPanel.add(swing.JCheckBox("Capitalize", False, actionPerformed=self.handleSqliConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("Append random chars", False, actionPerformed=self.handleSqliConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("Replace () with ``", False, actionPerformed=self.handleSqliConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Lower case", False, actionPerformed=self.handleSqliConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Toggle case", False, actionPerformed=self.handleSqliConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleSqliConfigCheckBox))
         tmpPanel.add(swing.JLabel("Add a prefix :     ", swing.SwingConstants.RIGHT))
         self.sqliPrefixArea = swing.JTextField("", 15)
         tmpPanel.add(self.sqliPrefixArea)
         
         # Second row
         tmpPanel.add(swing.JCheckBox("URL encode special chars", False, actionPerformed=self.handleSqliConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("Toggle case", False, actionPerformed=self.handleSqliConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("HTML encode special chars", False, actionPerformed=self.handleSqliConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleSqliConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleSqliConfigCheckBox))
         tmpPanel.add(swing.JLabel("Add a suffix :     ", swing.SwingConstants.RIGHT))
         self.sqliSuffixArea = swing.JTextField("", 15)
         tmpPanel.add(self.sqliSuffixArea)
@@ -359,10 +355,11 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         # Third row
         tmpPanel.add(swing.JCheckBox("Non-standard percent encoding", False, actionPerformed=self.handleSqliConfigCheckBox))
         tmpPanel.add(swing.JCheckBox("Non-standard slash encoding", False, actionPerformed=self.handleSqliConfigCheckBox))
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))   
-        
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleSqliConfigCheckBox))
+        tmpPanel.add(swing.JLabel("Original parameter value :     ", swing.SwingConstants.RIGHT))
+        self.sqliOriginalParamArea = swing.JTextField("", 15)  
+        tmpPanel.add(self.sqliOriginalParamArea)
+
         secondTab.add(tmpPanel, BorderLayout.SOUTH)
         ############ END SQLi TAB ############
 
@@ -640,9 +637,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         elif buttonText == "Save to File":
             self.launchThread(self.saveTextToFile, [self.sqliPayloadTextArea])
         else:
-            print sqliDbmsToTest
-            print
-            print sqliTechniques
+            print buttonText
 
     def generateSqliPayloads(self):
         """Write payloads to the text area"""
@@ -656,8 +651,25 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
                 for test in tests:
                     if (db.lower() in payload[0].lower() and test.lower() in payload[0].lower()):
                         sqliPayloads.append(payload[1])
+        sqliPayloads = list(set(sqliPayloads))
+        sqliPayloads = [self.substituteValues(payload) for payload in sqliPayloads]
 
-        self.sqliPayloadTextArea.text = '\n'.join(list(set(sqliPayloads)))
+        if self.sqliPrefixArea.text:
+            sqliPayloads = [self.sqliPrefixArea.text + payload for payload in sqliPayloads]
+        if self.sqliSuffixArea.text:
+            sqliPayloads = [payload + self.sqliSuffixArea.text for payload in sqliPayloads]
+        if sqliConfig['Non-standard percent encoding']:
+            sqliPayloads = [percentNonStandardEncode(payload) for payload in sqliPayloads]
+        if sqliConfig['Non-standard slash encoding']:
+            sqliPayloads = [slashNonStandardEncode(payload) for payload in sqliPayloads]
+        if sqliConfig['URL encode special chars']:
+            sqliPayloads = [urlEncode(payload) for payload in sqliPayloads]
+        if sqliConfig['Lower case']:
+            sqliPayloads = [payload.lower() for payload in sqliPayloads]
+        if sqliConfig['Toggle case']:
+            sqliPayloads = [capsEveryOtherChar(payload) for payload in sqliPayloads]
+
+        self.sqliPayloadTextArea.text = '\n'.join(sorted(list(set(sqliPayloads)), key=len))
 
     def handleHeadersSelectCheckBox(self, event):
         """Handles checkbox clicks from the Headers menu 
@@ -765,6 +777,25 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
             with open(filepath, 'w') as fh:
                 fh.write(obj.text)
 
+    def substituteValues(self, sentence):
+        """Substitutes values for the SQLMap placeholders."""
+        if '[randnum' in sentence.lower():
+            sentence = re.sub(r'\[RANDNUM\]', '{}'.format(random.randint(1,1000)), sentence, flags=re.IGNORECASE)
+            sentence = re.sub(r'\[RANDNUM1\]', '{}'.format(random.randint(1,1000)), sentence, flags=re.IGNORECASE)
+            sentence = re.sub(r'\[RANDNUM2\]', '{}'.format(random.randint(1,1000)), sentence, flags=re.IGNORECASE)
+            sentence = re.sub(r'\[RANDNUM3\]', '{}'.format(random.randint(1,1000)), sentence, flags=re.IGNORECASE)
+            sentence = re.sub(r'\[RANDNUM4\]', '{}'.format(random.randint(1,1000)), sentence, flags=re.IGNORECASE)
+            sentence = re.sub(r'\[RANDNUM5\]', '{}'.format(random.randint(1,1000)), sentence, flags=re.IGNORECASE)
+        if '[sleeptime' in sentence.lower():
+            sentence = re.sub(r'\[SLEEPTIME\]', '{}'.format(random.randint(5,10)), sentence, flags=re.IGNORECASE)
+        if '[randstr' in sentence.lower():
+            sentence = re.sub(r'\[RANDSTR\]', '{}'.format(getRandomString(random.randint(5,10))), sentence, flags=re.IGNORECASE)
+        if '[origvalue' in sentence.lower():
+            sentence = re.sub(r'\[ORIGVALUE\]', '{}'.format(self.sqliOriginalParamArea.text), sentence, flags=re.IGNORECASE)
+        if '[delimiter_start' in sentence.lower():
+            sentence = re.sub(r'\[DELIMITER_START\]', '{}'.format(0x7176717a71), sentence, flags=re.IGNORECASE)
+            sentence = re.sub(r'\[DELIMITER_STOP\]', '{}'.format(0x7171786a71), sentence, flags=re.IGNORECASE)
+        return sentence
 
 def urlEncode(string):
     """Returns a string where any reserved URL characters
