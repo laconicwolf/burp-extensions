@@ -464,6 +464,13 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tabbedPane.addTab("OS Injection", sixthTab)
 
         callbacks.addSuiteTab(self)
+
+        # Seventh tab
+        seventhTab = swing.JPanel()
+        seventhTab.layout = BorderLayout()
+        tabbedPane.addTab("Collaborator Log", sixthTab)
+
+        callbacks.addSuiteTab(self)
         
         # Set up space for save dialogue
         self.savePanel = swing.JPanel()
