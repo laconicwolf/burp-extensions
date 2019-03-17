@@ -116,6 +116,39 @@ headerTests = {
     "Out-of-band": True,
 }
 
+shellLangToTest = {
+    "NetCat": False,
+    "Perl": False,
+    "Python": False,
+    "/dev/tcp": False,
+    "Bash": False,
+    "Java": False,
+    "PHP": False,
+    "Ruby": False,
+    "PowerShell": False,
+    "AWK": False,
+    "Lua": False,
+    "NodeJS": False,
+    "Groovy": False,
+    "ASP": False 
+}
+
+shellTypes = {
+    "One-liner WebShell": False,
+    "Full WebShell": False,
+    "Reverse": False,
+    "Bind": False,
+}
+
+shellConfig = {
+    "URL encode special chars": False,
+    "Toggle case": False,
+    "Lower case": False,
+    "Non-standard percent encoding": False,
+    "Non-standard slash encoding": False
+}
+
+
 class BurpExtender(IBurpExtender, ITab, swing.JFrame):
     def registerExtenderCallbacks(self, callbacks):
         
@@ -449,9 +482,122 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         ############ END HEADERS TAB ############
 
         # Fourth tab
+        ############ START SHELLS TAB ############
         fourthTab = swing.JPanel()
         fourthTab.layout = BorderLayout()
-        tabbedPane.addTab("Web Shells", fourthTab)
+        tabbedPane.addTab("Shells", fourthTab)
+
+        tmpGridPanel = swing.JPanel()
+        tmpGridPanel.layout = GridLayout(1, 2)
+
+        # Top of Shell Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = GridLayout(3, 5)
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("Language/Tool")
+        
+        # First row
+        tmpPanel.add(swing.JCheckBox("NetCat", False, actionPerformed=self.handleShellLangSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("Perl", False, actionPerformed=self.handleShellLangSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("Python", False, actionPerformed=self.handleShellLangSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("/dev/tcp", False, actionPerformed=self.handleShellLangSelectCheckBox))
+        
+        # Second row
+        tmpPanel.add(swing.JCheckBox("Bash", False, actionPerformed=self.handleShellLangSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("Java", False, actionPerformed=self.handleShellLangSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("PHP", False, actionPerformed=self.handleShellLangSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("Ruby", False, actionPerformed=self.handleShellLangSelectCheckBox))
+        
+        # Third row
+        tmpPanel.add(swing.JCheckBox("PowerShell", False, actionPerformed=self.handleShellLangSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("AWK", False, actionPerformed=self.handleShellLangSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("Lua", False, actionPerformed=self.handleShellLangSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("NodeJS", False, actionPerformed=self.handleShellLangSelectCheckBox))
+
+        # Fourth row
+        tmpPanel.add(swing.JCheckBox("Groovy", False, actionPerformed=self.handleShellLangSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("ASP", False, actionPerformed=self.handleShellLangSelectCheckBox))
+        tmpPanel1.add(swing.JLabel(""))
+        tmpPanel1.add(swing.JLabel(""))
+
+        # Top of Shell Panel
+        tmpPanel1 = swing.JPanel()
+        tmpPanel1.layout = GridLayout(3, 5)
+        tmpPanel1.border = swing.BorderFactory.createTitledBorder("Type")
+     
+        # First row
+        tmpPanel1.add(swing.JCheckBox("One-liner WebShell", False, actionPerformed=self.handleShellTypeCheckBox))
+        tmpPanel1.add(swing.JCheckBox("Full WebShell", False, actionPerformed=self.handleShellTypeCheckBox))
+        tmpPanel1.add(swing.JLabel(""))
+        tmpPanel1.add(swing.JLabel(""))
+        
+        # Second row
+        tmpPanel1.add(swing.JCheckBox("Reverse", False, actionPerformed=self.handleShellTypeCheckBox))
+        tmpPanel1.add(swing.JCheckBox("Bind", False, actionPerformed=self.handleShellTypeCheckBox))
+        tmpPanel1.add(swing.JLabel(""))
+        tmpPanel1.add(swing.JLabel(""))
+        
+        # Third row
+        tmpPanel1.add(swing.JLabel(""))
+        tmpPanel1.add(swing.JLabel(""))
+        tmpPanel1.add(swing.JLabel(""))
+        tmpPanel1.add(swing.JLabel(""))
+
+        #firstTab.add(tmpPanel, BorderLayout.NORTH)
+        tmpGridPanel.add(tmpPanel)
+        tmpGridPanel.add(tmpPanel1)
+        fourthTab.add(tmpGridPanel, BorderLayout.NORTH)
+
+        # Middle of Shell Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = BorderLayout()
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("Payloads")
+        self.shellPayloadTextArea = swing.JTextArea('', 15, 100)
+        self.shellPayloadTextArea.setLineWrap(False)
+        scrollTextArea = swing.JScrollPane(self.shellPayloadTextArea)
+        tmpPanel.add(scrollTextArea)
+        fourthTab.add(tmpPanel, BorderLayout.CENTER)
+
+        # Right/Middle of Shell Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = GridLayout(6,1)
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("Output options")
+        tmpPanel.add(swing.JButton('Generate Payloads', actionPerformed=self.handleShellButtonClick))
+        tmpPanel.add(swing.JButton('Copy Payloads to Clipboard', actionPerformed=self.handleShellButtonClick))
+        tmpPanel.add(swing.JButton('Clear Payloads', actionPerformed=self.handleShellButtonClick))
+        tmpPanel.add(swing.JButton('Save to File', actionPerformed=self.handleShellButtonClick))
+        tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleShellButtonClick))
+        tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleShellButtonClick))
+        fourthTab.add(tmpPanel, BorderLayout.EAST)
+
+        # Bottom of Shell Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = GridLayout(3, 5)
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("Config")
+
+        # First row
+        tmpPanel.add(swing.JCheckBox("Lower case", False, actionPerformed=self.handleShellConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Toggle case", False, actionPerformed=self.handleShellConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleShellConfigCheckBox))
+        tmpPanel.add(swing.JLabel("Callback server address :     ", swing.SwingConstants.RIGHT))
+        self.shellCallbackAddressArea = swing.JTextField("", 15)  
+        tmpPanel.add(self.shellCallbackAddressArea)
+        
+        # Second row
+        tmpPanel.add(swing.JCheckBox("URL encode special chars", False, actionPerformed=self.handleShellConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleShellConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleShellConfigCheckBox))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+
+        # Third row
+        tmpPanel.add(swing.JCheckBox("Non-standard percent encoding", False, actionPerformed=self.handleShellConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Non-standard slash encoding", False, actionPerformed=self.handleShellConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleShellConfigCheckBox))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+
+        fourthTab.add(tmpPanel, BorderLayout.SOUTH)
+        ############ END SHELLS TAB ############
 
         # Fifth tab
         fifthTab = swing.JPanel()
@@ -465,10 +611,34 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
 
         callbacks.addSuiteTab(self)
 
+        ####START COLLABORATOR INTERACTIONS TAB####
         # Seventh tab
         seventhTab = swing.JPanel()
         seventhTab.layout = BorderLayout()
-        tabbedPane.addTab("Collaborator Log", sixthTab)
+        tabbedPane.addTab("Collaborator Log", seventhTab)
+
+        # Text area for Collaborator Interactions Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = BorderLayout()
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("Collaborator Interactions")
+        self.collaboratorInteractionsTextArea = swing.JTextArea('', 15, 100)
+        self.collaboratorInteractionsTextArea.setLineWrap(False)
+        scrollTextArea = swing.JScrollPane(self.collaboratorInteractionsTextArea)
+        tmpPanel.add(scrollTextArea)
+        seventhTab.add(tmpPanel, BorderLayout.CENTER)
+
+        # Right/Middle of Collaborator Interactions Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = GridLayout(6,1)
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("Options")
+        tmpPanel.add(swing.JButton('Poll Collaborator Server', actionPerformed=self.handleCollabButtonClick))
+        tmpPanel.add(swing.JButton('Copy Interactions to Clipboard', actionPerformed=self.handleCollabButtonClick))
+        tmpPanel.add(swing.JButton('Clear Log', actionPerformed=self.handleCollabButtonClick))
+        tmpPanel.add(swing.JButton('Save to File', actionPerformed=self.handleCollabButtonClick))
+        tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleCollabButtonClick))
+        tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleCollabButtonClick))
+        seventhTab.add(tmpPanel, BorderLayout.EAST)
+        #####END COLLABORATOR INTERACTIONS TAB#####
 
         callbacks.addSuiteTab(self)
         
@@ -742,6 +912,63 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
                 payloads.append(header + ': Digest username="Mufasa"')
         self.headerPayloadTextArea.text = '\n'.join(payloads)
 
+    def handleShellLangSelectCheckBox(self, event):
+        """Handles clicks in the Shell 
+        """
+        if event.source.selected:
+            shellLangToTest[event.source.text] = True
+        else:
+            shellLangToTest[event.source.text] = False
+
+    def handleShellTypeCheckBox(self, event):
+        if event.source.selected:
+            shellTypes[event.source.text] = True
+        else:
+            shellTypes[event.source.text] = False
+
+    def handleShellConfigCheckBox(self, event):
+        """Handles checkbox clicks from the Shell menu config 
+        selection to ensure only payloads are generated with 
+        or without any specified options.
+        """
+        if event.source.selected:
+            shellConfig[event.source.text] = True
+        else:
+            shellConfig[event.source.text] = False
+
+    def handleShellButtonClick(self, event):
+        """Handles button clicks from Shell menu."""
+        buttonText = event.source.text
+        if buttonText == "Generate Payloads":
+            self.launchThread(self.generateShellPayloads())
+        elif buttonText == "Copy Payloads to Clipboard":
+            self.copyToClipboard(self.shellPayloadTextArea.text)
+        elif buttonText == 'Clear Payloads':
+            self.clearTextArea(self.shellPayloadTextArea)
+        elif buttonText == "Poll Collaborator Server":
+            self.launchThread(self.pollCollabServer())            
+        elif buttonText == "Save to File":
+            self.launchThread(self.saveTextToFile, [self.shellPayloadTextArea])
+        else:
+            print buttonText
+
+    def generateShellPayloads(self):
+        print "Generating shell Payloads"
+
+    def handleCollabButtonClick(self, event):
+        """Handles button clicks from Collaborator Interactions menu."""
+        buttonText = event.source.text
+        if buttonText == "Copy Interactions to Clipboard":
+            self.copyToClipboard(self.collaboratorInteractionsTextArea.text)
+        elif buttonText == 'Clear Log':
+            self.clearTextArea(self.collaboratorInteractionsTextArea)
+        elif buttonText == "Poll Collaborator Server":
+            self.launchThread(self.pollCollabServer())            
+        elif buttonText == "Save to File":
+            self.launchThread(self.saveTextToFile, [self.collaboratorInteractionsTextArea])
+        else:
+            print buttonText
+
     def pollCollabServer(self):
         """Polls the collaborator server."""
         if self.collab:
@@ -749,7 +976,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
             if interactions:
                 for i in interactions:
                     props = i.properties
-                    print "Received interaction '{}' from {} at {} via {}".format(props['interaction_id'], props['client_ip'], props['time_stamp'], props['type'])
+                    self.collaboratorInteractionsTextArea.append("Received interaction '{}' from {} at {} via {}\n".format(props['interaction_id'], props['client_ip'], props['time_stamp'], props['type']))
 
     def copyToClipboard(self, text):
         """Copies text to clipboard"""
