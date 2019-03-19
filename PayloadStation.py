@@ -676,8 +676,8 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
 
     def handleXssTagsSelectCheckBox(self, event):
         """Handles checkbox clicks from the XSS menu 
-        header selection to ensure only payloads for 
-        specified headers are generated.
+        selection to ensure only specified payloads  
+        are generated.
         """
         if event.source.selected:
             xssTags[event.source.text] = True
@@ -686,8 +686,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
 
     def handleXssEventCheckBox(self, event):
         """Handles checkbox clicks from the XSS evenk handler menu 
-        header selection to ensure only payloads for 
-        specified headers are generated.
+        selection to ensure only specified payloads are generated.
         """
         if event.source.selected:
             xssEventHandlers[event.source.text] = True
@@ -695,7 +694,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
             xssEventHandlers[event.source.text] = False
 
     def handleXssConfigCheckBox(self, event):
-        """Handles heckbox clicks from the XSS menu config 
+        """Handles checkbox clicks from the XSS menu config 
         selection to ensure only payloads are generated with 
         or without any specified options.
         """
@@ -705,7 +704,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
             xssConfig[event.source.text] = False
 
     def handleXssButtonClick(self, event):
-        """Handles button clicks from header menu."""
+        """Handles button clicks from xss menu."""
         buttonText = event.source.text
         if buttonText == "Generate Payloads":
             self.launchThread(self.generateXssPayloads())
@@ -719,6 +718,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
             print buttonText
 
     def generateXssSamplePayload(self):
+        """Generates a PoC payload to alert a user."""
         samplePayloads = [
             "prompt({})".format(random.randint(1,1000)), 
             "confirm({})".format(random.randint(1,1000))
@@ -889,6 +889,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         payloads = []
         headers = [header for header in headersToTest if headersToTest[header]]
         tests = [test for test in headerTests if headerTests[test]]
+        self.collab = []
 
         for header in headers:
             for test in tests:
@@ -903,8 +904,9 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
                 if test == "Error Invoking Characters":
                     payloads += [header + ': ' + char for char in list(string.punctuation)]
                 if test == "Out-of-band":
-                    self.collab = self.callbacks.createBurpCollaboratorClientContext()
-                    collabPayload = self.collab.generatePayload(True)
+                    self.collabPayload = self.callbacks.createBurpCollaboratorClientContext()
+                    self.collab.append(self.collabPayload)
+                    collabPayload = self.collabPayload.generatePayload(True)
                     payloads.append(header + ': ' + 'https://' + collabPayload)
             if header == "Authorization":
                 payloads.append(header + ': Basic dGVzdHVzZXI6dGVzdHBhc3N3b3Jk')
@@ -972,11 +974,17 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
     def pollCollabServer(self):
         """Polls the collaborator server."""
         if self.collab:
-            interactions = self.collab.fetchAllCollaboratorInteractions()
-            if interactions:
-                for i in interactions:
-                    props = i.properties
-                    self.collaboratorInteractionsTextArea.append("Received interaction '{}' from {} at {} via {}\n".format(props['interaction_id'], props['client_ip'], props['time_stamp'], props['type']))
+            print dir(self.collab)
+            print len(self.collab)
+            print
+            print 11111
+            for collab in self.collab:    
+                interactions = collab.fetchAllCollaboratorInteractions()
+                print len(interactions)
+                if interactions:
+                    for i in interactions:
+                        props = i.properties
+                        self.collaboratorInteractionsTextArea.append("Received interaction '{}' from {} at {} via {}\n".format(props['interaction_id'], props['client_ip'], props['time_stamp'], props['type']))
 
     def copyToClipboard(self, text):
         """Copies text to clipboard"""
