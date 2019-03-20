@@ -143,7 +143,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         self.callbacks.setExtensionName("InjectMate")
 
         # Initialize the collaborator
-        self.collab = ''
+        self.collab = []
         
         # Create the main tab
         self.tab = swing.JPanel(BorderLayout())
@@ -828,7 +828,6 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         payloads = []
         headers = [header for header in headersToTest if headersToTest[header]]
         tests = [test for test in headersTests if headersTests[test]]
-        self.collab = []
 
         if self.customHeader1Area.text:
             headers.append(self.customHeader1Area.text)
