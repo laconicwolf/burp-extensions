@@ -775,6 +775,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         if sqliConfig['Toggle case']:
             sqliPayloads = [capsEveryOtherChar(payload) for payload in sqliPayloads]
 
+        # Write the payloads sorted by length.
         self.sqliPayloadTextArea.text = '\n'.join(sorted(list(set(sqliPayloads)), key=len))
 
     def handleHeadersSelectCheckBox(self, event):
