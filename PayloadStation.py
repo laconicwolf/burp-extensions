@@ -29,23 +29,26 @@ try:
 except ImportError:
     pass
 
+# Set initial configuration. Values correspond with 
+# checkboxes and default settings
+
 xssTags = {
-    'script': True,
-    'button': True,
+    'script': False,
+    'button': False,
     'video': False,
-    'details': True,
+    'details': False,
     'math': False,
     'audio': False,
-    'img': True,
+    'img': False,
     'body': False,
     'object': False
 }
 
 xssEventHandlers = {
-    'onclick': True,
-    'onerror': True,
-    'onkeypress': True,
-    'onmouseover': True,
+    'onclick': False,
+    'onerror': False,
+    'onkeypress': False,
+    'onmouseover': False,
     'onsubmit': False,
     'ondblclick': False,
     'onmouseenter': False,
@@ -61,14 +64,21 @@ xssConfig = {
     "HTML encode special chars": False,
     "Append random chars": False,
     "Non-standard percent encoding": False,
-    "Non-standard slash encoding": False
+    "Non-standard slash encoding": False,
+    "Close tags": False
 }
 
+# Copy of default settings so can eventually reset to default
+
+xssTagsDefault = xssTags
+xssEventHandlersDefault = xssEventHandlers 
+xssConfigDefault = xssConfig
+
 sqliDbmsToTest = {
-    "MySQL": True,
-    "Oracle": True,
-    "PostgreSQL": True,
-    "Microsoft SQL Server": True,
+    "MySQL": False,
+    "Oracle": False,
+    "PostgreSQL": False,
+    "Microsoft SQL Server": False,
     "Microsoft Access": False,
     "IBM DB2": False,
     "SQLite": False,
@@ -80,10 +90,10 @@ sqliDbmsToTest = {
 }
 
 sqliTechniques = {
-    "Boolean-based blind": True,
-    "Error-based": True,
-    "Time-based blind": True,
-    "Stacked queries": True
+    "Boolean-based blind": False,
+    "Error-based": False,
+    "Time-based blind": False,
+    "Stacked queries": False
 }
 
 sqliConfig = {
@@ -94,27 +104,36 @@ sqliConfig = {
     "Non-standard slash encoding": False
 }
 
+sqliDbmsToTestDefault = sqliDbmsToTest
+sqliTechniquesDefault = sqliTechniques
+sqliConfigDefault = sqliConfig
+
 headersToTest = {
-    'Authorization': True,
-    'Connection': True, 
-    'Host': True,
-    'HTTP2-Settings': True,
-    'Origin': True,
-    'Proxy-Authorization': True,
-    'Referer': True, 
-    'User-Agent': True,
-    'X-Forwarded-For': True,
-    'X-Forwarded-Host': True, 
-    'X-Method-Override': True,
-    'X-Wap-Profile': True    
+    'Authorization': False,
+    'Connection': False, 
+    'Host': False,
+    'HTTP2-Settings': False,
+    'Origin': False,
+    'Proxy-Authorization': False,
+    'Referer': False, 
+    'User-Agent': False,
+    'X-Forwarded-For': False,
+    'X-Forwarded-Host': False, 
+    'X-Method-Override': False,
+    'X-Wap-Profile': False    
 }
 
 headerTests = {
-    "Random string reflection": True,
-    "Error Invoking Characters": True,
-    "Random long strings": True,
-    "Out-of-band": True,
+    "Random string reflection": False,
+    "Error Invoking Characters": False,
+    "Random long strings": False,
+    "Out-of-band": False,
+    "Path Traversal": False,
+    "OS Injection": False
 }
+
+headersToTestDefault = headersToTest
+headerTestsDefault = headerTests
 
 shellLangToTest = {
     "NetCat": False,
@@ -148,7 +167,38 @@ shellConfig = {
     "Non-standard slash encoding": False
 }
 
+shellLangToTestDefault = shellLangToTest
+shellTypesDefault = shellTypes
+shellConfigDefault = shellConfig
 
+otherVulnToTest = {
+    "OS Injection": False,
+    "Path Traversal": False,
+    "XXE": False,
+    "LDAP Injection": False,
+}
+
+otherTbd = {
+    "TBD": False,
+    "TBD": False,
+    "TBD": False,
+    "TBD": False,
+}
+
+otherConfig = {
+    "URL encode special chars": False,
+    "Toggle case": False,
+    "Lower case": False,
+    "Non-standard percent encoding": False,
+    "Non-standard slash encoding": False
+}
+
+otherVulnToTestDefault = otherVulnToTest
+otherTbdDefault = otherTbd
+otherConfigDefault = otherConfig
+
+
+# Interact with Burp. Required
 class BurpExtender(IBurpExtender, ITab, swing.JFrame):
     def registerExtenderCallbacks(self, callbacks):
         
@@ -165,10 +215,14 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         # Initialize the collaborator
         self.collab = ''
         
-        # Create the tab
+        # Create the main tab
         self.tab = swing.JPanel(BorderLayout())
+
+        # Make it have subtabs
         tabbedPane = swing.JTabbedPane()
         self.tab.add(tabbedPane, BorderLayout.CENTER)
+
+        # Subtabs
 
         # First tab ############ START XSS TAB ############
         firstTab = swing.JPanel()
@@ -184,22 +238,28 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel.border = swing.BorderFactory.createTitledBorder("Tags to test")
         
         # First row
-        tmpPanel.add(swing.JCheckBox("script", True, actionPerformed=self.handleXssTagsSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("details", True, actionPerformed=self.handleXssTagsSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("img", True, actionPerformed=self.handleXssTagsSelectCheckBox))
-        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JCheckBox("script", False, actionPerformed=self.handleXssTagsSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("details", False, actionPerformed=self.handleXssTagsSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("img", False, actionPerformed=self.handleXssTagsSelectCheckBox))
+        tmpPanel.add(swing.JLabel("Custom tag :     ", swing.SwingConstants.RIGHT))
+        self.xssCustomTag1Area = swing.JTextField('', 15)
+        tmpPanel.add(self.xssCustomTag1Area)
         
         # Second row
-        tmpPanel.add(swing.JCheckBox("button", True, actionPerformed=self.handleXssTagsSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("button", False, actionPerformed=self.handleXssTagsSelectCheckBox))
         tmpPanel.add(swing.JCheckBox("math", False, actionPerformed=self.handleXssTagsSelectCheckBox))
         tmpPanel.add(swing.JCheckBox("body", False, actionPerformed=self.handleXssTagsSelectCheckBox))
-        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel("Custom tag :     ", swing.SwingConstants.RIGHT))
+        self.xssCustomTag2Area = swing.JTextField('', 15)
+        tmpPanel.add(self.xssCustomTag2Area)
         
         # Third row
         tmpPanel.add(swing.JCheckBox("video", False, actionPerformed=self.handleXssTagsSelectCheckBox))
         tmpPanel.add(swing.JCheckBox("audio", False, actionPerformed=self.handleXssTagsSelectCheckBox))
         tmpPanel.add(swing.JCheckBox("object", False, actionPerformed=self.handleXssTagsSelectCheckBox))
-        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel("Custom tag :     ", swing.SwingConstants.RIGHT))
+        self.xssCustomTag3Area = swing.JTextField('', 15)
+        tmpPanel.add(self.xssCustomTag3Area)
 
         # Top of XSS Panel
         tmpPanel1 = swing.JPanel()
@@ -207,22 +267,28 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel1.border = swing.BorderFactory.createTitledBorder("Event Handlers")
      
         # First row
-        tmpPanel1.add(swing.JCheckBox("onclick", True, actionPerformed=self.handleXssEventCheckBox))
-        tmpPanel1.add(swing.JCheckBox("onmouseover", True, actionPerformed=self.handleXssEventCheckBox))
-        tmpPanel1.add(swing.JCheckBox("onmouseenter", True, actionPerformed=self.handleXssEventCheckBox))
-        tmpPanel1.add(swing.JLabel(""))
+        tmpPanel1.add(swing.JCheckBox("onclick", False, actionPerformed=self.handleXssEventCheckBox))
+        tmpPanel1.add(swing.JCheckBox("onmouseover", False, actionPerformed=self.handleXssEventCheckBox))
+        tmpPanel1.add(swing.JCheckBox("onmouseenter", False, actionPerformed=self.handleXssEventCheckBox))
+        tmpPanel1.add(swing.JLabel("Custom handler :     ", swing.SwingConstants.RIGHT))
+        self.xssCustomHandler1Area = swing.JTextField('', 15)
+        tmpPanel1.add(self.xssCustomHandler1Area)
         
         # Second row
-        tmpPanel1.add(swing.JCheckBox("onerror", True, actionPerformed=self.handleXssEventCheckBox))
+        tmpPanel1.add(swing.JCheckBox("onerror", False, actionPerformed=self.handleXssEventCheckBox))
         tmpPanel1.add(swing.JCheckBox("onsubmit", False, actionPerformed=self.handleXssEventCheckBox))
         tmpPanel1.add(swing.JCheckBox("onscroll", False, actionPerformed=self.handleXssEventCheckBox))
-        tmpPanel1.add(swing.JLabel(""))
+        tmpPanel1.add(swing.JLabel("Custom handler :     ", swing.SwingConstants.RIGHT))
+        self.xssCustomHandler2Area = swing.JTextField('', 15)
+        tmpPanel1.add(self.xssCustomHandler2Area)
         
         # Third row
         tmpPanel1.add(swing.JCheckBox("onkeypress", False, actionPerformed=self.handleXssEventCheckBox))
         tmpPanel1.add(swing.JCheckBox("ondblclick", False, actionPerformed=self.handleXssEventCheckBox))
         tmpPanel1.add(swing.JCheckBox("onwheel", False, actionPerformed=self.handleXssEventCheckBox))
-        tmpPanel1.add(swing.JLabel(""))
+        tmpPanel1.add(swing.JLabel("Custom handler :     ", swing.SwingConstants.RIGHT))
+        self.xssCustomHandler3Area = swing.JTextField('', 15)
+        tmpPanel1.add(self.xssCustomHandler3Area)
 
         #firstTab.add(tmpPanel, BorderLayout.NORTH)
         tmpGridPanel.add(tmpPanel)
@@ -247,8 +313,8 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel.add(swing.JButton('Copy Payloads to Clipboard', actionPerformed=self.handleXssButtonClick))
         tmpPanel.add(swing.JButton('Clear Payloads', actionPerformed=self.handleXssButtonClick))
         tmpPanel.add(swing.JButton('Save to File', actionPerformed=self.handleXssButtonClick))
-        tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleXssButtonClick))
-        tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleXssButtonClick))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
         firstTab.add(tmpPanel, BorderLayout.EAST)
 
         # Bottom of XSS Panel
@@ -275,9 +341,10 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         # Third row
         tmpPanel.add(swing.JCheckBox("Non-standard percent encoding", False, actionPerformed=self.handleXssConfigCheckBox))
         tmpPanel.add(swing.JCheckBox("Non-standard slash encoding", False, actionPerformed=self.handleXssConfigCheckBox))
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))   
+        tmpPanel.add(swing.JCheckBox("Close tags", False, actionPerformed=self.handleXssConfigCheckBox))
+        tmpPanel.add(swing.JLabel("Add text :     ", swing.SwingConstants.RIGHT))
+        self.xssTagTextArea = swing.JTextField('', 15)
+        tmpPanel.add(self.xssTagTextArea)   
         
         firstTab.add(tmpPanel, BorderLayout.SOUTH)
         ############ END XSS TAB ############
@@ -297,10 +364,10 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel.border = swing.BorderFactory.createTitledBorder("DBMS to test")
         
         # First row
-        tmpPanel.add(swing.JCheckBox("MySQL", True, actionPerformed=self.handleSqliDbSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("Oracle", True, actionPerformed=self.handleSqliDbSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("PostgreSQL", True, actionPerformed=self.handleSqliDbSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("Microsoft SQL Server", True, actionPerformed=self.handleSqliDbSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("MySQL", False, actionPerformed=self.handleSqliDbSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("Oracle", False, actionPerformed=self.handleSqliDbSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("PostgreSQL", False, actionPerformed=self.handleSqliDbSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("Microsoft SQL Server", False, actionPerformed=self.handleSqliDbSelectCheckBox))
         
         # Second row
         tmpPanel.add(swing.JCheckBox("Microsoft Access", False, actionPerformed=self.handleSqliDbSelectCheckBox))
@@ -320,14 +387,15 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel1.border = swing.BorderFactory.createTitledBorder("Techniques")
      
         # First row
-        tmpPanel1.add(swing.JCheckBox("Boolean-based blind", True, actionPerformed=self.handleSqliTechniquesCheckBox))
-        tmpPanel1.add(swing.JCheckBox("Time-based blind", True, actionPerformed=self.handleSqliTechniquesCheckBox))
+        tmpPanel1.add(swing.JCheckBox("Boolean-based blind", False, actionPerformed=self.handleSqliTechniquesCheckBox))
+        tmpPanel1.add(swing.JCheckBox("Time-based blind", False, actionPerformed=self.handleSqliTechniquesCheckBox))
+        tmpPanel1.add(swing.JLabel(""))
         tmpPanel1.add(swing.JLabel(""))
         tmpPanel1.add(swing.JLabel(""))
         
         # Second row
-        tmpPanel1.add(swing.JCheckBox("Error-based", True, actionPerformed=self.handleSqliTechniquesCheckBox))
-        tmpPanel1.add(swing.JCheckBox("Stacked queries", True, actionPerformed=self.handleSqliTechniquesCheckBox))
+        tmpPanel1.add(swing.JCheckBox("Error-based", False, actionPerformed=self.handleSqliTechniquesCheckBox))
+        tmpPanel1.add(swing.JCheckBox("Stacked queries", False, actionPerformed=self.handleSqliTechniquesCheckBox))
         tmpPanel1.add(swing.JLabel(""))
         tmpPanel1.add(swing.JLabel(""))
         
@@ -360,8 +428,8 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel.add(swing.JButton('Copy Payloads to Clipboard', actionPerformed=self.handleSqliButtonClick))
         tmpPanel.add(swing.JButton('Clear Payloads', actionPerformed=self.handleSqliButtonClick))
         tmpPanel.add(swing.JButton('Save to File', actionPerformed=self.handleSqliButtonClick))
-        tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleSqliButtonClick))
-        tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleSqliButtonClick))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
         secondTab.add(tmpPanel, BorderLayout.EAST)
 
         # Bottom of SQLi Panel
@@ -408,25 +476,31 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel.border = swing.BorderFactory.createTitledBorder("Headers to test")
         
         # First row
-        tmpPanel.add(swing.JCheckBox("Authorization", True, actionPerformed=self.handleHeadersSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("Connection", True, actionPerformed=self.handleHeadersSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("Host", True, actionPerformed=self.handleHeadersSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("HTTP2-Settings", True, actionPerformed=self.handleHeadersSelectCheckBox))
-        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JCheckBox("Authorization", False, actionPerformed=self.handleHeadersSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("Connection", False, actionPerformed=self.handleHeadersSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("Host", False, actionPerformed=self.handleHeadersSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("HTTP2-Settings", False, actionPerformed=self.handleHeadersSelectCheckBox))
+        tmpPanel.add(swing.JLabel("Custom Header :     ", swing.SwingConstants.RIGHT))
+        self.customHeader1Area = swing.JTextField("", 15)  
+        tmpPanel.add(self.customHeader1Area)
         
         # Second row
-        tmpPanel.add(swing.JCheckBox("Origin", True, actionPerformed=self.handleHeadersSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("Proxy-Authorization", True, actionPerformed=self.handleHeadersSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("Referer", True, actionPerformed=self.handleHeadersSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("User-Agent", True, actionPerformed=self.handleHeadersSelectCheckBox))
-        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JCheckBox("Origin", False, actionPerformed=self.handleHeadersSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("Proxy-Authorization", False, actionPerformed=self.handleHeadersSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("Referer", False, actionPerformed=self.handleHeadersSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("User-Agent", False, actionPerformed=self.handleHeadersSelectCheckBox))
+        tmpPanel.add(swing.JLabel("Custom Header :     ", swing.SwingConstants.RIGHT))
+        self.customHeader2Area = swing.JTextField("", 15)  
+        tmpPanel.add(self.customHeader2Area)
         
         # Third row
-        tmpPanel.add(swing.JCheckBox("X-Forwarded-For", True, actionPerformed=self.handleHeadersSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("X-Forwarded-Host", True, actionPerformed=self.handleHeadersSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("X-Method-Override", True, actionPerformed=self.handleHeadersSelectCheckBox))
-        tmpPanel.add(swing.JCheckBox("X-Wap-Profile", True, actionPerformed=self.handleHeadersSelectCheckBox))
-        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JCheckBox("X-Forwarded-For", False, actionPerformed=self.handleHeadersSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("X-Forwarded-Host", False, actionPerformed=self.handleHeadersSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("X-Method-Override", False, actionPerformed=self.handleHeadersSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("X-Wap-Profile", False, actionPerformed=self.handleHeadersSelectCheckBox))
+        tmpPanel.add(swing.JLabel("Custom Header :     ", swing.SwingConstants.RIGHT))
+        self.customHeader3Area = swing.JTextField("", 15)  
+        tmpPanel.add(self.customHeader3Area)
         
         thirdTab.add(tmpPanel, BorderLayout.NORTH)
 
@@ -449,7 +523,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel.add(swing.JButton('Clear Payloads', actionPerformed=self.handleHeadersButtonClick))
         tmpPanel.add(swing.JButton('Save to File', actionPerformed=self.handleHeadersButtonClick))
         tmpPanel.add(swing.JButton('Poll Collaborator Server', actionPerformed=self.handleHeadersButtonClick))
-        tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleHeadersButtonClick))
+        tmpPanel.add(swing.JLabel(""))
         thirdTab.add(tmpPanel, BorderLayout.EAST)
 
         # Bottom of Headers Panel
@@ -458,25 +532,34 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel.border = swing.BorderFactory.createTitledBorder("Config")
         
         # First row
-        tmpPanel.add(swing.JCheckBox("Random string reflection", True, actionPerformed=self.handleHeadersConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("Error Invoking Characters", True, actionPerformed=self.handleHeadersConfigCheckBox))
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JCheckBox("Random string reflection", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Error Invoking Characters", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Path Traversal", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel.add(swing.JLabel("Custom header value :     ", swing.SwingConstants.RIGHT))
+        self.headersCustomValue1Area = swing.JTextField("", 15)  
+        tmpPanel.add(self.headersCustomValue1Area)
         
         # Second row
-        tmpPanel.add(swing.JCheckBox("Random long strings", True, actionPerformed=self.handleHeadersConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("Out-of-band", True, actionPerformed=self.handleHeadersConfigCheckBox))
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JCheckBox("Random long strings", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Out-of-band", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("OS Injection", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel.add(swing.JLabel("Custom header value :     ", swing.SwingConstants.RIGHT))
+        self.headersCustomValue2Area = swing.JTextField("", 15)  
+        tmpPanel.add(self.headersCustomValue2Area)
 
         # Third row
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))
-        tmpPanel.add(swing.JLabel(""))     
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel.add(swing.JLabel("Callback server address :     ", swing.SwingConstants.RIGHT))
+        self.headersCallbackAddressArea = swing.JTextField("", 15)  
+        tmpPanel.add(self.headersCallbackAddressArea)
         
         thirdTab.add(tmpPanel, BorderLayout.SOUTH)
         ############ END HEADERS TAB ############
@@ -529,6 +612,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel1.add(swing.JCheckBox("Full WebShell", False, actionPerformed=self.handleShellTypeCheckBox))
         tmpPanel1.add(swing.JLabel(""))
         tmpPanel1.add(swing.JLabel(""))
+        tmpPanel1.add(swing.JLabel(""))
         
         # Second row
         tmpPanel1.add(swing.JCheckBox("Reverse", False, actionPerformed=self.handleShellTypeCheckBox))
@@ -565,8 +649,8 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel.add(swing.JButton('Copy Payloads to Clipboard', actionPerformed=self.handleShellButtonClick))
         tmpPanel.add(swing.JButton('Clear Payloads', actionPerformed=self.handleShellButtonClick))
         tmpPanel.add(swing.JButton('Save to File', actionPerformed=self.handleShellButtonClick))
-        tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleShellButtonClick))
-        tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleShellButtonClick))
+        tmpPanel.add(swing.JButton('Poll Collaborator Server', actionPerformed=self.handleShellButtonClick))
+        tmpPanel.add(swing.JLabel(""))
         fourthTab.add(tmpPanel, BorderLayout.EAST)
 
         # Bottom of Shell Panel
@@ -600,16 +684,128 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         ############ END SHELLS TAB ############
 
         # Fifth tab
+        ############ OTHER PAYLOADS TAB #############
         fifthTab = swing.JPanel()
         fifthTab.layout = BorderLayout()
-        tabbedPane.addTab("Path Traversal", fifthTab)
+        tabbedPane.addTab("Other", fifthTab)
 
-        # Sixth tab
-        sixthTab = swing.JPanel()
-        sixthTab.layout = BorderLayout()
-        tabbedPane.addTab("OS Injection", sixthTab)
+        tmpGridPanel = swing.JPanel()
+        tmpGridPanel.layout = GridLayout(1, 2)
 
-        callbacks.addSuiteTab(self)
+        # Top of Other Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = GridLayout(3, 5)
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("Vulnerability")
+        
+        # First row
+        tmpPanel.add(swing.JCheckBox("OS Injection", False, actionPerformed=self.handleOtherVulnSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("XXE", False, actionPerformed=self.handleOtherVulnSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("Path Traversal", False, actionPerformed=self.handleOtherVulnSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("LDAP Injection", False, actionPerformed=self.handleOtherVulnSelectCheckBox))
+        
+        # Second row
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleOtherVulnSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleOtherVulnSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleOtherVulnSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleOtherVulnSelectCheckBox))
+        
+        # Third row
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleOtherVulnSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleOtherVulnSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleOtherVulnSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleOtherVulnSelectCheckBox))
+
+        # Fourth row
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleOtherVulnSelectCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleOtherVulnSelectCheckBox))
+        tmpPanel1.add(swing.JLabel(""))
+        tmpPanel1.add(swing.JLabel(""))
+
+        # Top of Other Panel
+        tmpPanel1 = swing.JPanel()
+        tmpPanel1.layout = GridLayout(3, 5)
+        tmpPanel1.border = swing.BorderFactory.createTitledBorder("TBD")
+     
+        # First row
+        tmpPanel1.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleOtherTbdSelectCheckBox))
+        tmpPanel1.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleOtherTbdSelectCheckBox))
+        tmpPanel1.add(swing.JLabel(""))
+        tmpPanel1.add(swing.JLabel(""))
+        
+        # Second row
+        tmpPanel1.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleOtherTbdSelectCheckBox))
+        tmpPanel1.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleOtherTbdSelectCheckBox))
+        tmpPanel1.add(swing.JLabel(""))
+        tmpPanel1.add(swing.JLabel(""))
+        
+        # Third row
+        tmpPanel1.add(swing.JLabel(""))
+        tmpPanel1.add(swing.JLabel(""))
+        tmpPanel1.add(swing.JLabel(""))
+        tmpPanel1.add(swing.JLabel(""))
+
+        #firstTab.add(tmpPanel, BorderLayout.NORTH)
+        tmpGridPanel.add(tmpPanel)
+        tmpGridPanel.add(tmpPanel1)
+        fifthTab.add(tmpGridPanel, BorderLayout.NORTH)
+
+        # Middle of Other Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = BorderLayout()
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("Payloads")
+        self.otherPayloadTextArea = swing.JTextArea('', 15, 100)
+        self.otherPayloadTextArea.setLineWrap(False)
+        scrollTextArea = swing.JScrollPane(self.otherPayloadTextArea)
+        tmpPanel.add(scrollTextArea)
+        fifthTab.add(tmpPanel, BorderLayout.CENTER)
+
+        # Right/Middle of Other Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = GridLayout(6,1)
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("Output options")
+        tmpPanel.add(swing.JButton('Generate Payloads', actionPerformed=self.handleOtherButtonClick))
+        tmpPanel.add(swing.JButton('Copy Payloads to Clipboard', actionPerformed=self.handleOtherButtonClick))
+        tmpPanel.add(swing.JButton('Clear Payloads', actionPerformed=self.handleOtherButtonClick))
+        tmpPanel.add(swing.JButton('Save to File', actionPerformed=self.handleOtherButtonClick))
+        tmpPanel.add(swing.JButton('Poll Collaborator Server', actionPerformed=self.handleOtherButtonClick))
+        tmpPanel.add(swing.JLabel(""))
+        fifthTab.add(tmpPanel, BorderLayout.EAST)
+
+        # Bottom of Other Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = GridLayout(3, 5)
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("Config")
+
+        # First row
+        tmpPanel.add(swing.JCheckBox("Lower case", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Toggle case", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JLabel("Callback server address :     ", swing.SwingConstants.RIGHT))
+        self.shellCallbackAddressArea = swing.JTextField("", 15)  
+        tmpPanel.add(self.shellCallbackAddressArea)
+        
+        # Second row
+        tmpPanel.add(swing.JCheckBox("URL encode special chars", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+
+        # Third row
+        tmpPanel.add(swing.JCheckBox("Non-standard percent encoding", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Non-standard slash encoding", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+
+        fifthTab.add(tmpPanel, BorderLayout.SOUTH)
+
+        ############ END OTHER PAYLOAD TAB #############
+
+
+        ######### PLACE HOLDER FOR SIXTH TAB #############
+        ######### PLACE HOLDER FOR SIXTH TAB #############
+
 
         ####START COLLABORATOR INTERACTIONS TAB####
         # Seventh tab
@@ -629,14 +825,16 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
 
         # Right/Middle of Collaborator Interactions Panel
         tmpPanel = swing.JPanel()
-        tmpPanel.layout = GridLayout(6,1)
+        tmpPanel.layout = GridLayout(8,1)
         tmpPanel.border = swing.BorderFactory.createTitledBorder("Options")
         tmpPanel.add(swing.JButton('Poll Collaborator Server', actionPerformed=self.handleCollabButtonClick))
         tmpPanel.add(swing.JButton('Copy Interactions to Clipboard', actionPerformed=self.handleCollabButtonClick))
         tmpPanel.add(swing.JButton('Clear Log', actionPerformed=self.handleCollabButtonClick))
         tmpPanel.add(swing.JButton('Save to File', actionPerformed=self.handleCollabButtonClick))
-        tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleCollabButtonClick))
-        tmpPanel.add(swing.JButton('TBD', actionPerformed=self.handleCollabButtonClick))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
         seventhTab.add(tmpPanel, BorderLayout.EAST)
         #####END COLLABORATOR INTERACTIONS TAB#####
 
@@ -730,6 +928,21 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tags = [tag for tag in xssTags if xssTags[tag]]
         handlers = [handler for handler in xssEventHandlers if xssEventHandlers[handler]]
         payloads = []
+
+        if self.xssCustomTag1Area.text:
+            tags.append(self.xssCustomTag1Area.text)
+        if self.xssCustomTag2Area.text:
+            tags.append(self.xssCustomTag2Area.text)
+        if self.xssCustomTag3Area.text:
+            tags.append(self.xssCustomTag3Area.text)
+
+        if self.xssCustomHandler1Area.text:
+            handlers.append(self.xssCustomHandler1Area.text)
+        if self.xssCustomHandler2Area.text:
+            handlers.append(self.xssCustomHandler2Area.text)
+        if self.xssCustomHandler3Area.text:
+            handlers.append(self.xssCustomHandler3Area.text) 
+
         for tag in tags:
             if xssConfig['Capitalize']:
                 tag = tag.upper()
@@ -740,24 +953,34 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
                 payloads.append("<{0}>{1}</{0}>".format(tag, xssSamplePayload))
                 continue
             if tag.lower() == 'math':
-                payloads.append('<math href="javascript:alert(1)">CLICKME</math>')
-                payloads.append('<math><maction actiontype="statusline#http://google.com" xlink:href="javascript:alert(2)">CLICKME</maction></math>')
-                payloads.append('<math><maction actiontype="statusline" xlink:href="javascript:alert(3)">CLICKME<mtext>http://http://google.com</mtext></maction></math>')
+                text = self.xssTagTextArea.text if self.xssTagTextArea.text else 'ClickMe'
+                payloads.append('<math href="javascript:alert({})">{}</math>'.format(random.randint(1,1000), text))
+                payloads.append('<math><maction actiontype="statusline#http://google.com" xlink:href="javascript:alert({})">{}</maction></math>'.format(random.randint(1,1000), text))
+                payloads.append('<math><maction actiontype="statusline" xlink:href="javascript:alert({})"><mtext>http://http://google.com</mtext></maction></math>'.format(random.randint(1,1000)))
                 continue
             if tag.lower() == 'details':
                 xssSamplePayload = self.generateXssSamplePayload()
-                payloads.append('<details open ontoggle={}>'.format(xssSamplePayload))
+                payloads.append('<details open ontoggle={}>{}'.format(xssSamplePayload, self.xssTagTextArea.text))
             for handler in handlers:
                 xssSamplePayload = self.generateXssSamplePayload()
                 if tag.lower() == 'details':
-                    payloads.append("<{} open {}={}>".format(tag, handler, xssSamplePayload))
+                    if xssConfig['Close tags']:
+                        payloads.append("<{0} open {1}={2}>{3}</{0}>".format(tag, handler, xssSamplePayload, self.xssTagTextArea.text))
+                    else:
+                        payloads.append("<{} open {}={}>{}".format(tag, handler, xssSamplePayload, self.xssTagTextArea.text))
                 elif tag.lower() in ['video', 'audio', 'img']:
                     if tag.lower() in ['video', 'audio']:
-                        payloads.append("<{0} controls src=0 {1}={2}></{0}>".format(tag, handler, xssSamplePayload))
+                        payloads.append("<{0} controls src={3} {1}={2}></{0}>".format(tag, handler, xssSamplePayload, random.randint(1,1000)))
                     else:
-                        payloads.append("<{} src=0 {}={}>".format(tag, handler, xssSamplePayload))
+                        if xssConfig['Close tags']:
+                            payloads.append("<{0} src={3} {1}={2}></{0}>".format(tag, handler, xssSamplePayload, random.randint(1,1000)))
+                        else:
+                            payloads.append("<{} src={3} {}={}>".format(tag, handler, xssSamplePayload, random.randint(1,1000)))
                 else:
-                    payloads.append("<{} {}={}>".format(tag, handler, xssSamplePayload))
+                    if xssConfig['Close tags']:
+                        payloads.append("<{0} {1}={2}>{3}</{0}>".format(tag, handler, xssSamplePayload, self.xssTagTextArea.text))
+                    else:
+                        payloads.append("<{} {}={}>{3}".format(tag, handler, xssSamplePayload, self.xssTagTextArea.text))
 
         if xssConfig['Replace () with ``']:
             payloads = [payload.replace('(','`').replace(')','`') for payload in payloads]
@@ -891,6 +1114,13 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tests = [test for test in headerTests if headerTests[test]]
         self.collab = []
 
+        if self.customHeader1Area.text:
+            headers.append(self.customHeader1Area.text)
+        if self.customHeader2Area.text:
+            headers.append(self.customHeader2Area.text)
+        if self.customHeader3Area.text:
+            headers.append(self.customHeader3Area.text)
+
         for header in headers:
             for test in tests:
                 if test == "Random string reflection":
@@ -904,10 +1134,20 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
                 if test == "Error Invoking Characters":
                     payloads += [header + ': ' + char for char in list(string.punctuation)]
                 if test == "Out-of-band":
-                    self.collabPayload = self.callbacks.createBurpCollaboratorClientContext()
-                    self.collab.append(self.collabPayload)
-                    collabPayload = self.collabPayload.generatePayload(True)
-                    payloads.append(header + ': ' + 'https://' + collabPayload)
+                    if self.headersCallbackAddressArea.text:
+                        payloads.append(header + ': ' + self.headersCallbackAddressArea.text)
+                    else:
+                        try:
+                            self.collabPayload = self.callbacks.createBurpCollaboratorClientContext()
+                            self.collab.append(self.collabPayload)
+                            collabPayload = self.collabPayload.generatePayload(True)
+                            payloads.append(header + ': ' + 'https://' + collabPayload)
+                        except:
+                            continue
+            if self.headersCustomValue1Area.text:
+                payloads.append(header + ': ' + self.headersCustomValue1Area.text)
+            if self.headersCustomValue2Area.text:
+                payloads.append(header + ': ' + self.headersCustomValue2Area.text)
             if header == "Authorization":
                 payloads.append(header + ': Basic dGVzdHVzZXI6dGVzdHBhc3N3b3Jk')
                 payloads.append(header + ': Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c')
@@ -957,6 +1197,50 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
     def generateShellPayloads(self):
         print "Generating shell Payloads"
 
+    def handleOtherVulnSelectCheckBox(self, event):
+        """Handles Other tab vulnerability box."""
+        if event.source.selected:
+            otherVulnToTest[event.source.text] = True
+        else:
+            otherVulnToTest[event.source.text] = False
+
+    def handleOtherTbdSelectCheckBox(self, event):
+        """Handles Other tab TBD check boxes."""
+        if event.source.selected:
+            otherTbd[event.source.text] = True
+        else:
+            otherTbd[event.source.text] = False
+
+    def handleOtherConfigCheckBox(self, event):
+        """Handles checkbox clicks from the Other menu config 
+        selection to ensure only payloads are generated with 
+        or without any specified options.
+        """
+        if event.source.selected:
+            otherConfig[event.source.text] = True
+        else:
+            otherConfig[event.source.text] = False
+
+    def handleOtherButtonClick(self, event):
+        """Handles button clicks from Other menu."""
+        buttonText = event.source.text
+        if buttonText == "Generate Payloads":
+            self.launchThread(self.generateShellPayloads())
+        elif buttonText == "Copy Payloads to Clipboard":
+            self.copyToClipboard(self.otherPayloadTextArea.text)
+        elif buttonText == 'Clear Payloads':
+            self.clearTextArea(self.otherPayloadTextArea)
+        elif buttonText == "Poll Collaborator Server":
+            self.launchThread(self.pollCollabServer())            
+        elif buttonText == "Save to File":
+            self.launchThread(self.saveTextToFile, [self.otherPayloadTextArea])
+        else:
+            print buttonText
+
+    def generateOtherPayloads(self):
+        """Generates various payloads."""
+        print "Generating other Payloads"
+
     def handleCollabButtonClick(self, event):
         """Handles button clicks from Collaborator Interactions menu."""
         buttonText = event.source.text
@@ -1004,6 +1288,11 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
             t = threading.Thread(target=targetFunction)
         t.daemon = True
         t.start()
+
+    def resetToDefault(self, obj):
+        """Resets tab to default."""
+        # TODO
+        pass
 
     def saveTextToFile(self, obj):
         """Save the text of an obj to a file.
@@ -1098,3 +1387,4 @@ try:
     FixBurpExceptions()
 except:
     pass
+
