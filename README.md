@@ -9,8 +9,8 @@ https://laconicwolf.com/2018/04/13/burp-extension-python-tutorial/
 
 ## Extensions
 
-### PayloadStation.py - Still in progress
-Multi-tabbed extension that helps generate payloads for various purposes (XSS, SQLi, Header injection, etc.). Includes intergration with Collaborator to discover OOB and blind issues. Allows for payload customization and has multiple options for encoding and that could help with WAF bypass. XSS payloads that get generated may not all be valid (some event handlers may not work with the specific tag). SQLi payloads are taken from SQLMap and sorted by DBMS and technique (my implementation of this may not be perfect...). Several tabs are not yet completed. Of course, suggestions are welcome. 
+### InjectMate.py
+Multi-tabbed extension that helps generate payloads for various purposes (XSS, SQLi, Header injection). Includes intergration with Collaborator to discover OOB and blind issues. Allows for payload customization and has multiple options for encoding and that could help with WAF bypass. XSS payloads that get generated may not all be valid (some event handlers may not work with the specific tag). SQLi payloads are taken from SQLMap and sorted by DBMS and technique (my implementation of this may not be perfect, and it is probably just better to just run SQLMap). Of course, suggestions are welcome. 
 
 ### GenerateForcedBrowseWordlist.py
 Extracts the filenames from URLs in scope or from a selected host. Just right click on the hosts pane in the sitemap and click 'Generate forced browsing wordlist' for either selected items or all hosts in scope. The output will appear in the extender tab, where you can set configure the extension to output to the system console, save to a file, or show in the UI.
