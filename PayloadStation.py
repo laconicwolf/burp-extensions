@@ -527,41 +527,58 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         thirdTab.add(tmpPanel, BorderLayout.EAST)
 
         # Bottom of Headers Panel
+        
+        # splitting the bottom panel
+        tmpGridPanel = swing.JPanel()
+        tmpGridPanel.layout = GridLayout(1, 2)
+        #
+
         tmpPanel = swing.JPanel()
+
         tmpPanel.layout = GridLayout(3, 5)
         tmpPanel.border = swing.BorderFactory.createTitledBorder("Config")
         
         # First row
-        tmpPanel.add(swing.JCheckBox("Random string reflection", False, actionPerformed=self.handleHeadersConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("Error Invoking Characters", False, actionPerformed=self.handleHeadersConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("Path Traversal", False, actionPerformed=self.handleHeadersConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleHeadersConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleHeadersConfigCheckBox))
-        tmpPanel.add(swing.JLabel("Custom header value :     ", swing.SwingConstants.RIGHT))
-        self.headersCustomValue1Area = swing.JTextField("", 15)  
-        tmpPanel.add(self.headersCustomValue1Area)
+        tmpPanel.add(swing.JCheckBox("Lower case", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("URL encode special chars", False, actionPerformed=self.handleHeadersConfigCheckBox))
         
         # Second row
-        tmpPanel.add(swing.JCheckBox("Random long strings", False, actionPerformed=self.handleHeadersConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("Out-of-band", False, actionPerformed=self.handleHeadersConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("OS Injection", False, actionPerformed=self.handleHeadersConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleHeadersConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleHeadersConfigCheckBox))
-        tmpPanel.add(swing.JLabel("Custom header value :     ", swing.SwingConstants.RIGHT))
-        self.headersCustomValue2Area = swing.JTextField("", 15)  
-        tmpPanel.add(self.headersCustomValue2Area)
+        tmpPanel.add(swing.JCheckBox("Upper case", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Non-standard slash encoding", False, actionPerformed=self.handleHeadersConfigCheckBox))
 
         # Third row
-        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleHeadersConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleHeadersConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleHeadersConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleHeadersConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("TBD", False, actionPerformed=self.handleHeadersConfigCheckBox))
-        tmpPanel.add(swing.JLabel("Callback server address :     ", swing.SwingConstants.RIGHT))
-        self.headersCallbackAddressArea = swing.JTextField("", 15)  
-        tmpPanel.add(self.headersCallbackAddressArea)
+        tmpPanel.add(swing.JCheckBox("Toggle case", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Non-standard percent encoding", False, actionPerformed=self.handleHeadersConfigCheckBox))
+
+        tmpPanel1 = swing.JPanel()
+        tmpPanel1.layout = GridLayout(3, 5)
+        tmpPanel1.border = swing.BorderFactory.createTitledBorder("Tests")
+     
+        # First row
+        tmpPanel1.add(swing.JCheckBox("Error Invoking Characters", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel1.add(swing.JCheckBox("Random string reflection", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel1.add(swing.JLabel("Custom header value:  ", swing.SwingConstants.RIGHT))
+        self.headersCustomValue1Area = swing.JTextField("", 15)  
+        tmpPanel1.add(self.headersCustomValue1Area)
         
-        thirdTab.add(tmpPanel, BorderLayout.SOUTH)
+        # Second row
+        tmpPanel1.add(swing.JCheckBox("Path Traversal", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel1.add(swing.JCheckBox("Random long strings", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel1.add(swing.JLabel("Custom header value:  ", swing.SwingConstants.RIGHT))
+        self.headersCustomValue2Area = swing.JTextField("", 15)  
+        tmpPanel1.add(self.headersCustomValue2Area)
+        
+        # Third row
+        tmpPanel1.add(swing.JCheckBox("Out-of-band", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel1.add(swing.JCheckBox("OS Injection", False, actionPerformed=self.handleHeadersConfigCheckBox))
+        tmpPanel1.add(swing.JLabel("Callback server address:  ", swing.SwingConstants.RIGHT))
+        self.headersCallbackAddressArea = swing.JTextField("", 15)  
+        tmpPanel1.add(self.headersCallbackAddressArea)
+
+        tmpGridPanel.add(tmpPanel)
+        tmpGridPanel.add(tmpPanel1)
+        
+        thirdTab.add(tmpGridPanel, BorderLayout.SOUTH)
         ############ END HEADERS TAB ############
 
         # Fourth tab
@@ -599,8 +616,8 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         # Fourth row
         tmpPanel.add(swing.JCheckBox("Groovy", False, actionPerformed=self.handleShellLangSelectCheckBox))
         tmpPanel.add(swing.JCheckBox("ASP", False, actionPerformed=self.handleShellLangSelectCheckBox))
-        tmpPanel1.add(swing.JLabel(""))
-        tmpPanel1.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
 
         # Top of Shell Panel
         tmpPanel1 = swing.JPanel()
@@ -1144,6 +1161,10 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
                             payloads.append(header + ': ' + 'https://' + collabPayload)
                         except:
                             continue
+                if test == "Path Traversal":
+                    payloads += [header + ': ' + pathPayload for pathPayload in PATH_TRAVERSAL_PAYLOADS]
+                if test == "OS Injection":
+                    payloads += [header + ': ' + osIPayload for osIPayload in OS_INJECTION_PAYLOADS]
             if self.headersCustomValue1Area.text:
                 payloads.append(header + ': ' + self.headersCustomValue1Area.text)
             if self.headersCustomValue2Area.text:
@@ -1388,3 +1409,13 @@ try:
 except:
     pass
 
+
+PATH_TRAVERSAL_PAYLOADS = [
+    '../../../../../etc/passwd',
+    '..\\..\\..\\..\\..\\c:\\windows.ini'
+]
+
+OS_INJECTION_PAYLOADS = [
+    'dir',
+    'ping -c 5 127.0.0.1'
+]
