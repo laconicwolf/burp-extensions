@@ -1,9 +1,9 @@
 __author__ = 'Jake Miller (@LaconicWolf)'
-__date__ = '20190312'
+__date__ = '20190320'
 __version__ = '0.01'
 __description__ = """\
 Burp Extension that generates payloads for 
-various testing needs.
+XSS, SQLi, and Header injection vulns.
 """
 
 from burp import IBurpExtender, ITab
@@ -67,12 +67,6 @@ xssConfig = {
     "Close tags": False
 }
 
-# Copy of default settings so can eventually reset to default
-
-xssTagsDefault = xssTags
-xssEventHandlersDefault = xssEventHandlers 
-xssConfigDefault = xssConfig
-
 sqliDbmsToTest = {
     "MySQL": False,
     "Oracle": False,
@@ -102,10 +96,6 @@ sqliConfig = {
     "Non-standard percent encoding": False,
     "Non-standard slash encoding": False
 }
-
-sqliDbmsToTestDefault = sqliDbmsToTest
-sqliTechniquesDefault = sqliTechniques
-sqliConfigDefault = sqliConfig
 
 headersToTest = {
     'Authorization': False,
@@ -137,10 +127,6 @@ headersConfig = {
     "Non-standard percent encoding": False,
     "Non-standard slash encoding": False
 }
-
-headersToTestDefault = headersToTest
-headersTestsDefault = headersTests
-headersConfigDefault = headersConfig
 
 # Interact with Burp. Required
 class BurpExtender(IBurpExtender, ITab, swing.JFrame):
@@ -525,6 +511,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         thirdTab.add(tmpGridPanel, BorderLayout.SOUTH)
         ############ END HEADERS TAB ############
 
+        ### Originally had 7 tabs...Got rid of 4, 5, and 6. ###
 
         ####START COLLABORATOR INTERACTIONS TAB####
         # Seventh tab
@@ -915,13 +902,8 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
     def pollCollabServer(self):
         """Polls the collaborator server."""
         if self.collab:
-            print dir(self.collab)
-            print len(self.collab)
-            print
-            print 11111
             for collab in self.collab:    
                 interactions = collab.fetchAllCollaboratorInteractions()
-                print len(interactions)
                 if interactions:
                     for i in interactions:
                         props = i.properties
@@ -945,11 +927,6 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
             t = threading.Thread(target=targetFunction)
         t.daemon = True
         t.start()
-
-    def resetToDefault(self, obj):
-        """Resets tab to default."""
-        # TODO
-        pass
 
     def saveTextToFile(self, obj):
         """Save the text of an obj to a file.
@@ -1028,7 +1005,7 @@ def capsEveryOtherChar(word):
     return ret
 
 def getSqlMapPayloads():
-    """Reads in a ::: delimited file containing sqlmap payloads 
+    """Pulls in a ::: delimited string containing sqlmap payloads 
     and descriptions. Returns the data as a list of tuples.
     """
     contents = SQLMAP_DATA.split('\n')
