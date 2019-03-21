@@ -21,5 +21,5 @@ Like repeater, only without any of the features, bug checking, or elegance. A si
 ### RequestAsPython-PowerShell.py
 Once again, extensions already exist for this, but is an example of a tab with a split panel GUI. Top pane is for an HTTP request, and the bottom pane contains a button and three text fields. Click the button, and the request gets transformed to its equivalent in Python requests, Python urllib2, and PowerShell Invoke-WebRequest. Not all methods and use cases were tested, but seems to work okay.
 
-### encodeDecodeHash.py
-Performs encoding, decoding, and hashing similar to ZAP's encode/decode/hash tool. 
+### EncodeDecodeHash.py
+Performs encoding, decoding, and hashing similar to ZAP's encode/decode/hash tool. The extension encodeDecodeHash.py is only here for training purposes, as it is used in a tutorial. EncodeDecodeHash.py has some GUI improvements (scroll panes, line wrap) and performance improvements (multithreading), so if you are going to use it, be sure to use EncodeDecodeHash and not encodeDecodeHash. 
