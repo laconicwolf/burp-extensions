@@ -537,7 +537,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel.add(swing.JButton('Copy Interactions to Clipboard', actionPerformed=self.handleCollabButtonClick))
         tmpPanel.add(swing.JButton('Clear Log', actionPerformed=self.handleCollabButtonClick))
         tmpPanel.add(swing.JButton('Save to File', actionPerformed=self.handleCollabButtonClick))
-        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JButton('Reset Collaborator Interactions', actionPerformed=self.handleCollabButtonClick))
         tmpPanel.add(swing.JLabel(""))
         tmpPanel.add(swing.JLabel(""))
         tmpPanel.add(swing.JLabel(""))
@@ -896,6 +896,8 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
             self.launchThread(self.pollCollabServer())            
         elif buttonText == "Save to File":
             self.launchThread(self.saveTextToFile, [self.collaboratorInteractionsTextArea])
+        elif buttonText == "Reset Collaborator Interactions":
+            self.collab = []
         else:
             print buttonText
 
